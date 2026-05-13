@@ -1,16 +1,28 @@
-# Inventory-Linked Accounting — Design Spec
+# Inventory-Linked Accounting — Full Platform Design Spec
 **Date:** 2026-05-13  
-**Status:** Approved for implementation
+**Status:** Approved for implementation  
+**Scope:** Full TallyPrime parity + beyond-Tally differentiation, organized into 6 phases
+
+---
+
+## 0. Phase Map
+
+| Phase | Name | What ships |
+|---|---|---|
+| **1** | Inventory Foundation | Core inventory module: stock master data, godowns, batches, serial numbers, price lists, stock vouchers, all valuation methods, delivery notes, GRNs, orders, rejections, barcode scanning, physical verification, inventory reports |
+| **2** | Manufacturing | Bill of Materials, manufacturing journals, job work, by-products/scrap, inter-company stock transfers, manufacturing reports |
+| **3** | Accounting Extensions | Cost centres & profit centres, budgets & variance, memorandum vouchers, reversing journals, interest calculation, cheque register, item-wise profitability |
+| **4** | Compliance Extensions | TDS module (Form 26Q), TCS module (Form 27EQ), MSME compliance (Form 1), IMS/GSTR-2B auto-reconciliation |
+| **5** | HR & Assets | Payroll (PF/ESI/gratuity/payslips), Fixed assets (register + depreciation), POS (retail billing + barcode) |
+| **6** | Beyond Tally | AI stock forecasting, eCommerce sync, Document AI, WhatsApp/SMS alerts, multi-entity consolidation, Tally XML export, interactive analytics, custom fields, bulk operations |
+
+Each phase is independently deployable. Later phases build on earlier ones but do not require all prior phases to be complete.
 
 ---
 
 ## 1. Overview
 
-Add a fully-featured Inventory module to the existing Edith accounting platform, matching TallyPrime's inventory-accounting coupling. The module lives as a new top-level **Inventory** sidebar section (separate from Accounting) and integrates with the accounting engine via the existing `sourceType`/`sourceId` pattern on `JournalEntry`.
-
-**Scope:** Full TallyPrime feature parity including all valuation methods, batch/expiry tracking, per-line godown selection, price lists, landing cost, zero-valued transactions, and free sample/BOGO modeling.
-
-**Out of scope (deferred):** Inter-company stock transfers, barcode/QR scanning, Bill of Materials / manufacturing.
+Add a complete Inventory + extended-accounting platform to Edith, going beyond TallyPrime parity to cloud-native, mobile-responsive, API-first features TallyPrime cannot offer. The Inventory module lives as a new top-level **Inventory** sidebar section (separate from Accounting) and integrates with the accounting engine via the existing `sourceType`/`sourceId` pattern on `JournalEntry`.
 
 ---
 
@@ -448,3 +460,540 @@ ManualStockVoucher.post()
 ```
 
 The accounting engine never reads inventory models directly — it only sees `JournalEntry` records. The inventory engine reads `StockLedger` for all valuation and reporting.
+
+---
+
+## Phase 1 Additions (beyond original inventory spec)
+
+### P1-A: New voucher types added to StockVoucherType enum
+
+```prisma
+enum StockVoucherType {
+  // ... existing ...
+  DELIVERY_NOTE      // goods dispatched before invoice (pre-invoice)
+  GOODS_RECEIPT_NOTE // goods received before bill (pre-bill)
+  SALES_ORDER        // customer order (no stock movement, commitment tracking)
+  PURCHASE_ORDER     // supplier order (no stock movement, commitment tracking)
+  REJECTION_IN       // customer returns (reverses DELIVERY stock)
+  REJECTION_OUT      // supplier returns (reverses RECEIPT stock)
+  PHYSICAL_VERIFY    // records physical count; generates ADJUSTMENT for variance
+}
+```
+
+### P1-B: New models
+
+**StockCategory** — orthogonal classification (e.g. "Premium", "Budget") across all groups:
+```prisma
+model StockCategory {
+  id        String    @id @default(cuid())
+  companyId String
+  name      String
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  items     StockItem[]
+  @@unique([companyId, name])
+  @@map("stock_categories")
+}
+```
+Add `categoryId String?` to `StockItem`.
+
+**SerialNumber** — individual unit tracking beyond batch:
+```prisma
+model SerialNumber {
+  id          String    @id @default(cuid())
+  companyId   String
+  stockItemId String
+  serialNo    String
+  batchId     String?
+  status      String    @default("in_stock")  // "in_stock" | "sold" | "returned" | "written_off"
+  godownId    String?
+  soldToId    String?   // customerId
+  soldVoucherId String?
+  createdAt   DateTime  @default(now())
+  @@unique([companyId, stockItemId, serialNo])
+  @@map("serial_numbers")
+}
+```
+Add `serialNumberId String?` to `StockVoucherLine`.
+
+**PhysicalStockVerification** — header for a stock-take session:
+```prisma
+model PhysicalStockVerification {
+  id          String    @id @default(cuid())
+  companyId   String
+  date        DateTime
+  godownId    String?
+  status      String    @default("draft")  // "draft" | "posted"
+  narration   String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  lines       PhysicalStockLine[]
+  @@map("physical_stock_verifications")
+}
+
+model PhysicalStockLine {
+  id            String   @id @default(cuid())
+  verificationId String
+  stockItemId   String
+  godownId      String
+  batchId       String?
+  bookQty       Decimal  @db.Decimal(12, 4)   // from StockLedger
+  physicalQty   Decimal  @db.Decimal(12, 4)   // entered by user
+  variance      Decimal  @db.Decimal(12, 4)   // physicalQty - bookQty
+  createdAt     DateTime @default(now())
+  verification  PhysicalStockVerification @relation(...)
+  @@map("physical_stock_lines")
+}
+```
+On post: auto-generate `StockVoucher` (ADJUSTMENT) for each non-zero variance line.
+
+### P1-C: Barcode/QR scanning
+
+- `StockItem` gains `barcode String?` and `qrCode String?` fields
+- Stock voucher and invoice line forms include a scan-input field: scan fires a lookup by barcode → auto-fills item
+- QR code generated and displayed on each StockItem detail page (using a client-side QR library, no server dependency)
+- Barcode label print template added to stock item actions menu
+
+### P1-D: Delivery Notes and GRNs (pre-invoice stock movement)
+
+- Delivery Note → creates a DELIVERY_NOTE StockVoucher (stock moves OUT) → when invoice is created, it references the DN; no double stock movement
+- GRN → creates a GOODS_RECEIPT_NOTE StockVoucher (stock moves IN) → when bill is created, it references the GRN
+- Link field: `SalesInvoice.deliveryNoteId?`, `PurchaseBill.grnId?`
+
+### P1-E: Purchase Orders / Sales Orders
+
+- Orders do not move stock — they create a `commitment` tracked against open order quantity
+- `StockItem` shows: in-stock qty, committed qty (from open orders), available qty
+- When an invoice/bill is created from an order, the order line is marked fulfilled
+
+---
+
+## Phase 2: Manufacturing
+
+### P2 Schema additions
+
+**BillOfMaterials** — recipe for a finished good:
+```prisma
+model BillOfMaterials {
+  id              String    @id @default(cuid())
+  companyId       String
+  finishedItemId  String    // the output StockItem
+  name            String    // "Standard BOM v1"
+  outputQty       Decimal   @db.Decimal(12, 4)  // qty produced per batch
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  components      BOMComponent[]
+  byProducts      BOMByProduct[]
+  @@map("bill_of_materials")
+}
+
+model BOMComponent {
+  id        String          @id @default(cuid())
+  bomId     String
+  stockItemId String        // raw material / sub-assembly
+  qty       Decimal         @db.Decimal(12, 4)
+  unitId    String
+  isScrap   Boolean         @default(false)
+  bom       BillOfMaterials @relation(...)
+  @@map("bom_components")
+}
+
+model BOMByProduct {
+  id          String          @id @default(cuid())
+  bomId       String
+  stockItemId String
+  qty         Decimal         @db.Decimal(12, 4)
+  rate        Decimal         @db.Decimal(15, 4) @default(0)
+  bom         BillOfMaterials @relation(...)
+  @@map("bom_by_products")
+}
+```
+
+**ManufacturingJournal** — records one production run:
+```prisma
+model ManufacturingJournal {
+  id              String         @id @default(cuid())
+  companyId       String
+  journalNumber   String
+  bomId           String
+  date            DateTime
+  status          DocumentStatus @default(DRAFT)
+  outputQty       Decimal        @db.Decimal(12, 4)
+  outputGodownId  String
+  narration       String?
+  journalEntryId  String?        @unique  // accounting entry for production cost
+  createdById     String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  consumptions    ManufacturingConsumption[]
+  @@unique([companyId, journalNumber])
+  @@map("manufacturing_journals")
+}
+
+model ManufacturingConsumption {
+  id            String               @id @default(cuid())
+  journalId     String
+  stockItemId   String
+  godownId      String
+  batchId       String?
+  qty           Decimal              @db.Decimal(12, 4)
+  rate          Decimal              @db.Decimal(15, 4)
+  amount        Decimal              @db.Decimal(15, 4)
+  journal       ManufacturingJournal @relation(...)
+  @@map("manufacturing_consumptions")
+}
+```
+
+On post: consume raw materials (OUT StockLedger), produce finished goods (IN StockLedger), generate `JournalEntry` for WIP → Finished Goods transfer.
+
+**JobWork** — material sent to/received from a job worker:
+```prisma
+model JobWorkOrder {
+  id            String         @id @default(cuid())
+  companyId     String
+  orderNumber   String
+  type          String         // "principal" | "worker"
+  jobWorkerId   String         // vendorId
+  date          DateTime
+  dueDate       DateTime?
+  status        DocumentStatus @default(DRAFT)
+  narration     String?
+  createdById   String
+  createdAt     DateTime       @default(now())
+  lines         JobWorkLine[]
+  @@unique([companyId, orderNumber])
+  @@map("job_work_orders")
+}
+
+model JobWorkLine {
+  id            String       @id @default(cuid())
+  orderId       String
+  stockItemId   String
+  godownId      String
+  direction     StockDirection  // IN = receive finished, OUT = send raw
+  qty           Decimal      @db.Decimal(12, 4)
+  rate          Decimal      @db.Decimal(15, 4)
+  order         JobWorkOrder @relation(...)
+  @@map("job_work_lines")
+}
+```
+
+**Inter-company stock transfer:**
+```prisma
+model InterCompanyTransfer {
+  id              String         @id @default(cuid())
+  fromCompanyId   String
+  toCompanyId     String
+  transferNumber  String
+  date            DateTime
+  status          DocumentStatus @default(DRAFT)
+  narration       String?
+  createdById     String
+  createdAt       DateTime       @default(now())
+  lines           InterCompanyTransferLine[]
+  @@unique([fromCompanyId, transferNumber])
+  @@map("inter_company_transfers")
+}
+
+model InterCompanyTransferLine {
+  id          String               @id @default(cuid())
+  transferId  String
+  stockItemId String
+  fromGodownId String
+  toGodownId  String
+  qty         Decimal              @db.Decimal(12, 4)
+  rate        Decimal              @db.Decimal(15, 4)
+  transfer    InterCompanyTransfer @relation(...)
+  @@map("inter_company_transfer_lines")
+}
+```
+On post: OUT StockLedger for `fromCompanyId`, IN StockLedger for `toCompanyId`, paired JournalEntries in both company books.
+
+### P2 Routes (under `/inventory`)
+
+| Route | Purpose |
+|---|---|
+| `/inventory/bom` | BOM list + create/edit |
+| `/inventory/manufacturing` | Manufacturing journal list |
+| `/inventory/manufacturing/new` | New production run |
+| `/inventory/job-work` | Job work order list |
+| `/inventory/inter-company-transfers` | ICT list |
+| `/inventory/reports/consumption` | Raw material consumption |
+| `/inventory/reports/production` | Production output |
+
+---
+
+## Phase 3: Accounting Extensions
+
+### P3 Schema additions
+
+**CostCentre** (full module, extends existing `costCenterId` on JournalLine):
+```prisma
+model CostCentre {
+  id          String    @id @default(cuid())
+  companyId   String
+  name        String
+  type        String    @default("cost")  // "cost" | "profit"
+  parentId    String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  parent      CostCentre?  @relation("CostCentreHierarchy", ...)
+  children    CostCentre[] @relation("CostCentreHierarchy")
+  budgets     Budget[]
+  @@unique([companyId, name])
+  @@map("cost_centres")
+}
+```
+
+**Budget:**
+```prisma
+model Budget {
+  id            String    @id @default(cuid())
+  companyId     String
+  name          String
+  fiscalYearId  String
+  costCentreId  String?
+  accountId     String?   // ChartAccount
+  periodType    String    @default("monthly")  // "monthly" | "quarterly" | "annual"
+  createdAt     DateTime  @default(now())
+  lines         BudgetLine[]
+  @@map("budgets")
+}
+
+model BudgetLine {
+  id        String    @id @default(cuid())
+  budgetId  String
+  period    String    // "2025-04" for monthly
+  amount    Decimal   @db.Decimal(15, 4)
+  budget    Budget    @relation(...)
+  @@map("budget_lines")
+}
+```
+
+**Memo Voucher** — add `isMemo Boolean @default(false)` to `JournalEntry`. Memo entries are not posted to ledger balances; they appear only in scenario reports.
+
+**Reversing Journal** — add `autoReverseDate DateTime?` to `JournalEntry`. A background job checks daily and creates the reversal entry on that date.
+
+**Interest Calculation:**
+```prisma
+model InterestRule {
+  id          String    @id @default(cuid())
+  companyId   String
+  name        String
+  ratePercent Decimal   @db.Decimal(8, 4)
+  basis       String    // "365" | "360" | "30_day_month"
+  graceDays   Int       @default(0)
+  appliesTo   String    // "customer" | "vendor" | "both"
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  @@map("interest_rules")
+}
+```
+Interest calculation runs on-demand per party, generates a `JournalEntry` (Interest Income Dr / AR Cr or Interest Expense Dr / AP Cr).
+
+**ChequeRegister:**
+```prisma
+model Cheque {
+  id            String    @id @default(cuid())
+  companyId     String
+  bankAccountId String
+  paymentId     String?
+  chequeNumber  String
+  chequeDate    DateTime
+  amount        Decimal   @db.Decimal(15, 4)
+  payee         String?
+  status        String    @default("issued")  // "issued" | "presented" | "cleared" | "bounced" | "cancelled" | "post_dated"
+  presentedDate DateTime?
+  clearedDate   DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  @@unique([companyId, bankAccountId, chequeNumber])
+  @@map("cheques")
+}
+```
+
+### P3 Routes (new sidebar section: **Finance**)
+
+| Route | Purpose |
+|---|---|
+| `/{orgSlug}/cost-centres` | Cost centre & profit centre tree |
+| `/{orgSlug}/budgets` | Budget list + variance report |
+| `/{orgSlug}/cheques` | Cheque register |
+| `/{orgSlug}/interest` | Interest calculation tool |
+| `/{orgSlug}/reports/item-profitability` | Item-wise P&L |
+
+---
+
+## Phase 4: Compliance Extensions
+
+### P4 Schema additions
+
+**TDSRate / TCSRate:**
+```prisma
+model TDSSection {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  section       String    // "194C", "194J", "194I" etc.
+  description   String
+  individualRate Decimal  @db.Decimal(8, 4)
+  companyRate   Decimal   @db.Decimal(8, 4)
+  threshold     Decimal   @db.Decimal(15, 4)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  @@map("tds_sections")
+}
+
+model TDSEntry {
+  id            String    @id @default(cuid())
+  companyId     String
+  sectionId     String
+  paymentId     String?   // linked Payment
+  vendorId      String
+  tdsAmount     Decimal   @db.Decimal(15, 4)
+  baseAmount    Decimal   @db.Decimal(15, 4)
+  date          DateTime
+  quarterPeriod String    // "Q1-2025-26"
+  status        String    @default("deducted")  // "deducted" | "deposited" | "filed"
+  challanNumber String?
+  createdAt     DateTime  @default(now())
+  @@map("tds_entries")
+}
+
+// TCS follows same pattern with TCSSection + TCSEntry
+```
+
+**MSMESupplier** — tag vendors as MSME:
+```prisma
+// Add to Vendor model:
+//   isMSME     Boolean  @default(false)
+//   msmeRegNo  String?
+//   msmeType   String?  // "micro" | "small" | "medium"
+```
+
+**GSTReconciliation (IMS):**
+```prisma
+model GSTRReconciliationRun {
+  id          String    @id @default(cuid())
+  companyId   String
+  period      String    // "2025-04"
+  type        String    // "2A" | "2B"
+  status      String    @default("pending")
+  totalBooks  Int       @default(0)
+  totalPortal Int       @default(0)
+  matched     Int       @default(0)
+  mismatched  Int       @default(0)
+  missing     Int       @default(0)
+  runAt       DateTime  @default(now())
+  lines       GSTRReconciliationLine[]
+  @@map("gstr_reconciliation_runs")
+}
+
+model GSTRReconciliationLine {
+  id            String   @id @default(cuid())
+  runId         String
+  invoiceNumber String?
+  gstin         String?
+  bookAmount    Decimal? @db.Decimal(15, 4)
+  portalAmount  Decimal? @db.Decimal(15, 4)
+  bookTax       Decimal? @db.Decimal(15, 4)
+  portalTax     Decimal? @db.Decimal(15, 4)
+  status        String   // "matched" | "mismatched" | "missing_in_books" | "missing_in_portal"
+  run           GSTRReconciliationRun @relation(...)
+  @@map("gstr_reconciliation_lines")
+}
+```
+
+### P4 Routes
+
+| Route | Purpose |
+|---|---|
+| `/{orgSlug}/tds` | TDS dashboard |
+| `/{orgSlug}/tds/entries` | TDS entry list + Form 26Q export |
+| `/{orgSlug}/tcs/entries` | TCS entry list + Form 27EQ export |
+| `/{orgSlug}/tax/gstr-reconciliation` | IMS/GSTR-2B reconciliation workspace |
+| `/{orgSlug}/tax/msme` | MSME supplier list + Form 1 |
+
+---
+
+## Phase 5: HR, Assets & POS
+
+### P5 Schema additions (summary — detailed schema in separate spec)
+
+**Payroll:** `Employee`, `PayrollRun`, `PayslipLine`, `PFRegister`, `ESIRegister`  
+**Fixed Assets:** `FixedAsset`, `AssetDepreciationSchedule`, `AssetDisposal`  
+**POS:** `POSSession`, `POSTransaction`, `POSTill` — links to SalesInvoice with `isPOS: true`; cashier opens/closes sessions; supports cash + UPI + card tender types
+
+### P5 Routes
+
+| Route | Purpose |
+|---|---|
+| `/{orgSlug}/payroll` | Payroll dashboard |
+| `/{orgSlug}/payroll/employees` | Employee master |
+| `/{orgSlug}/payroll/runs` | Monthly payroll processing |
+| `/{orgSlug}/fixed-assets` | Asset register |
+| `/{orgSlug}/pos` | POS terminal |
+
+---
+
+## Phase 6: Beyond TallyPrime
+
+### P6-A: AI Stock Forecasting
+- `StockForecast` model stores predicted demand per item per period
+- Computed from `StockLedger` history using a simple exponential smoothing algorithm (no external ML dependency)
+- UI: forecast chart overlay on stock summary; auto-suggested reorder quantity
+
+### P6-B: eCommerce Sync
+- Webhook receiver: `POST /api/webhooks/ecommerce/{platform}/{orgSlug}` (Shopify, WooCommerce)
+- On order created/fulfilled → create SalesInvoice + StockVoucher (DELIVERY) automatically
+- `EcommerceChannel` model: `platform`, `storeUrl`, `webhookSecret`, `itemMapping` (JSON, ecommerce SKU → StockItem)
+
+### P6-C: Document AI (Bill/Invoice OCR)
+- Upload PDF/image of a vendor bill → AI extracts vendor, date, line items, amounts
+- Pre-fills a `PurchaseBill` draft for human review
+- Uses Claude API (`claude-sonnet-4-6`) with structured output via tool_use
+- `OcrJob` model: `status`, `sourceKey`, `extractedData`, `billId?`
+
+### P6-D: Notifications (WhatsApp/SMS/Email)
+- Trigger library: low stock alert (qty < reorderLevel), expiry warning (30/7/1 day), overdue invoice, payment due reminder
+- `NotificationRule` model: `trigger`, `channelType` (email/whatsapp/sms), `recipients`, `template`, `isActive`
+- WhatsApp via Meta Cloud API; SMS via Twilio/MSG91; Email via existing SMTP
+
+### P6-E: Multi-entity Consolidation
+- `ConsolidationGroup` links multiple Companies within a workspace
+- Consolidated Balance Sheet and P&L roll up across entities
+- Inter-company eliminations tracked via `InterCompanyTransfer` records
+
+### P6-F: Tally XML Export
+- Export any date range of transactions as Tally-compatible XML
+- Enables migration path: businesses can switch to Edith from Tally and back
+- Route: `/{orgSlug}/settings/exports/tally-xml`
+
+### P6-G: Interactive Analytics
+- Replace static report tables with interactive charts (Recharts, already in project via shadcn chart component)
+- Drill-down: click a group in Stock Summary → see items; click an item → see ledger
+- Dashboard widgets are draggable/resizable per user preference (`DashboardLayout` model)
+
+### P6-H: Custom Fields
+- `CustomFieldDefinition` model: `entityType`, `fieldName`, `fieldType` (text/number/date/select), `isRequired`
+- `CustomFieldValue` model: `entityType`, `entityId`, `fieldId`, `value`
+- Applies to: StockItem, Customer, Vendor, SalesInvoice, PurchaseBill
+
+### P6-I: Bulk Operations
+- Bulk price update: select items → set new rate / apply % change → updates PriceListLine
+- Bulk post vouchers: select DRAFT stock vouchers → post all in one action
+- Bulk export: select any list → download CSV/Excel
+
+---
+
+## Summary: New sidebar sections by phase
+
+| Phase | Sidebar section | Icon |
+|---|---|---|
+| 1 | **Inventory** (collapsible) | `Package` |
+| 3 | **Finance** (collapsible — cost centres, budgets, cheques) | `TrendingUp` |
+| 4 | TDS/TCS added under **Accounting > Tax** | — |
+| 5 | **Payroll** (collapsible) | `Users` |
+| 5 | **Fixed Assets** (collapsible) | `Building` |
+| 5 | **POS** (top-level link) | `ShoppingCart` |
