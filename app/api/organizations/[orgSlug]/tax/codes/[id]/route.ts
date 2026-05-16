@@ -1,0 +1,52 @@
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { resolveCompany } from "@/lib/api/resolve-company"
+import { NextResponse } from "next/server"
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ orgSlug: string; id: string }> },
+) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const { orgSlug, id } = await params
+  const ctx = await resolveCompany(orgSlug, session.user.email)
+  if (!ctx) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  const taxCode = await prisma.taxCode.findFirst({ where: { id, workspaceId: ctx.workspaceId } })
+  if (!taxCode) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  const body = await req.json()
+  const ALLOWED = ["name", "rate", "jurisdiction", "isActive", "isDefault", "effectiveTo", "metadata"] as const
+  const data: Record<string, unknown> = {}
+  for (const key of ALLOWED) {
+    if (key in body) {
+      if (key === "effectiveTo") data[key] = body[key] ? new Date(body[key]) : null
+      else if (key === "rate")   data[key] = parseFloat(body[key])
+      else                       data[key] = body[key] ?? null
+    }
+  }
+
+  const updated = await prisma.taxCode.update({ where: { id }, data })
+  return NextResponse.json(updated)
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ orgSlug: string; id: string }> },
+) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const { orgSlug, id } = await params
+  const ctx = await resolveCompany(orgSlug, session.user.email)
+  if (!ctx) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  const taxCode = await prisma.taxCode.findFirst({ where: { id, workspaceId: ctx.workspaceId } })
+  if (!taxCode) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  await prisma.taxCode.delete({ where: { id } })
+  return NextResponse.json({ ok: true })
+}
