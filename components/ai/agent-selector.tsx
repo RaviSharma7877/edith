@@ -1,7 +1,7 @@
 "use client"
 
 import { Bot, FileText, RefreshCcw, Mail, Receipt, Upload } from "lucide-react"
-import type { Agent } from "@/lib/ai/agents"
+import type { AgentMeta } from "@/lib/ai/agent-meta"
 
 const AGENT_ICONS: Record<string, React.ElementType> = {
   "ar-summary": FileText,
@@ -13,7 +13,7 @@ const AGENT_ICONS: Record<string, React.ElementType> = {
 }
 
 type Props = {
-  agents: Agent[]
+  agents: AgentMeta[]
   onSelect: (agentId: string) => void
 }
 

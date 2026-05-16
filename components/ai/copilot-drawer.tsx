@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { X, ChevronLeft } from "lucide-react"
-import { AGENT_REGISTRY, DEFAULT_AGENT_ID } from "@/lib/ai/agents"
+import {
+  AGENT_META_MAP,
+  DEFAULT_AGENT_ID,
+  eligibleAgentsForPath,
+} from "@/lib/ai/agent-meta"
 import { AgentSelector } from "./agent-selector"
 import { ContextChips, deriveContextHints, type ContextHints } from "./context-chips"
 import { ChatThread } from "./chat-thread"
@@ -13,17 +17,11 @@ type Props = {
   onClose: () => void
 }
 
-function eligibleAgents(pathname: string) {
-  return Object.values(AGENT_REGISTRY).filter((agent) =>
-    agent.pages.some((prefix) => pathname.includes(prefix)),
-  )
-}
-
 export function CopilotDrawer({ orgSlug, onClose }: Props) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const agents = eligibleAgents(pathname)
+  const agents = eligibleAgentsForPath(pathname)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [contextHints, setContextHints] = useState<ContextHints>({})
 
@@ -31,7 +29,7 @@ export function CopilotDrawer({ orgSlug, onClose }: Props) {
     setContextHints(deriveContextHints(pathname, searchParams))
   }, [pathname, searchParams])
 
-  const selectedAgent = selectedAgentId ? AGENT_REGISTRY[selectedAgentId] : null
+  const selectedAgent = selectedAgentId ? AGENT_META_MAP[selectedAgentId] : null
 
   return (
     <div className="fixed bottom-[72px] right-4 z-50 flex h-[540px] w-[380px] flex-col overflow-hidden rounded-2xl border border-[rgba(55,50,47,0.14)] bg-[#FAFAF9] shadow-2xl">
@@ -72,7 +70,7 @@ export function CopilotDrawer({ orgSlug, onClose }: Props) {
             <AgentSelector agents={agents} onSelect={setSelectedAgentId} />
           ) : (
             <AgentSelector
-              agents={[AGENT_REGISTRY[DEFAULT_AGENT_ID]]}
+              agents={[AGENT_META_MAP[DEFAULT_AGENT_ID]]}
               onSelect={setSelectedAgentId}
             />
           )}

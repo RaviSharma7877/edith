@@ -3,17 +3,11 @@
 import { useState } from "react"
 import { Bot } from "lucide-react"
 import { usePathname } from "next/navigation"
-import { AGENT_REGISTRY } from "@/lib/ai/agents"
+import { hasEligibleAgent } from "@/lib/ai/agent-meta"
 import { CopilotDrawer } from "./copilot-drawer"
 
 type Props = {
   orgSlug: string
-}
-
-function hasEligibleAgent(pathname: string): boolean {
-  return Object.values(AGENT_REGISTRY).some((agent) =>
-    agent.pages.some((prefix) => pathname.includes(prefix)),
-  )
 }
 
 export function CopilotButton({ orgSlug }: Props) {
