@@ -57,6 +57,12 @@ import {
   PackageSearch,
   Settings2,
   ShoppingBag,
+  UserCheck,
+  CalendarDays,
+  PlayCircle,
+  FileSpreadsheet,
+  ShieldAlert,
+  BarChart3,
 } from "lucide-react"
 
 import {
@@ -90,6 +96,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CreateOrgDialog } from "@/components/create-org-dialog"
+import { CopilotButton } from "@/components/ai/copilot-button"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -111,6 +118,7 @@ function navMain(orgSlug: string, activeHref: string) {
 
 const ACCOUNTING_ROOTS = ["accounts", "journals", "sales-invoices", "customers", "vendors", "purchase-bills", "payments", "bank-accounts", "reconciliation", "tax", "reports", "period-close", "audit", "imports", "settings/api-keys", "settings/webhooks", "tds", "tcs"]
 const INVENTORY_ROOTS = ["inventory"]
+const PAYROLL_ROOTS = ["payroll"]
 
 function isOnAccountingRoute(orgSlug: string, href: string) {
   return ACCOUNTING_ROOTS.some((r) => href.startsWith(`/${orgSlug}/${r}`)) ||
@@ -147,9 +155,25 @@ function isOnInventoryRoute(orgSlug: string, href: string) {
   return INVENTORY_ROOTS.some((r) => href.startsWith(`/${orgSlug}/${r}`))
 }
 
+function isOnPayrollRoute(orgSlug: string, href: string) {
+  return PAYROLL_ROOTS.some((r) => href.startsWith(`/${orgSlug}/${r}`))
+}
+
+function navPayrollSub(orgSlug: string, activeHref: string) {
+  return [
+    { title: "Overview",        icon: LayoutDashboard,  href: `/${orgSlug}/payroll`                   },
+    { title: "Employees",       icon: UserCheck,        href: `/${orgSlug}/payroll/employees`         },
+    { title: "Attendance",      icon: CalendarDays,     href: `/${orgSlug}/payroll/attendance`        },
+    { title: "Payroll Runs",    icon: PlayCircle,       href: `/${orgSlug}/payroll/runs`              },
+    { title: "Payslip Register",icon: FileSpreadsheet,  href: `/${orgSlug}/payroll/payslips`          },
+    { title: "Statutory (PF)",  icon: ShieldAlert,      href: `/${orgSlug}/payroll/statutory/pf`      },
+    { title: "Statutory (ESI)", icon: ShieldAlert,      href: `/${orgSlug}/payroll/statutory/esi`     },
+    { title: "Reports",         icon: BarChart3,        href: `/${orgSlug}/payroll/reports`           },
+  ].map((item) => ({ ...item, active: activeHref === item.href || activeHref.startsWith(`${item.href}/`) }))
+}
+
 function navPhase5(orgSlug: string, activeHref: string) {
   return [
-    { title: "Payroll",      icon: Users,     href: `/${orgSlug}/payroll`      },
     { title: "Fixed Assets", icon: Building2, href: `/${orgSlug}/fixed-assets` },
     { title: "POS",          icon: Store,     href: `/${orgSlug}/pos`          },
   ].map((item) => ({ ...item, active: activeHref === item.href || activeHref.startsWith(`${item.href}/`) }))
@@ -315,9 +339,11 @@ export function AppSidebar({
 
   const onAccounting = isOnAccountingRoute(orgSlug, currentHref)
   const onInventory  = isOnInventoryRoute(orgSlug, currentHref)
+  const onPayroll    = isOnPayrollRoute(orgSlug, currentHref)
   const onPhase6     = isOnPhase6Route(orgSlug, currentHref)
   const [accountingOpen, setAccountingOpen] = useState(onAccounting)
   const [inventoryOpen, setInventoryOpen] = useState(onInventory)
+  const [payrollOpen, setPayrollOpen] = useState(onPayroll)
   const [phase6Open, setPhase6Open] = useState(onPhase6)
 
   const initials = (userName ?? userEmail ?? "U")
@@ -332,12 +358,13 @@ export function AppSidebar({
     window.location.href = "/api/auth/signout"
   }
 
-  const mainNav    = navMain(orgSlug, currentHref)
-  const subNav     = navAccountingSub(orgSlug, currentHref)
+  const mainNav      = navMain(orgSlug, currentHref)
+  const subNav       = navAccountingSub(orgSlug, currentHref)
   const inventoryNav = navInventorySub(orgSlug, currentHref)
-  const phase5Nav  = navPhase5(orgSlug, currentHref)
-  const phase6Nav  = navPhase6Sub(orgSlug, currentHref)
-  const docsNav    = navDocuments(orgSlug)
+  const payrollNav   = navPayrollSub(orgSlug, currentHref)
+  const phase5Nav    = navPhase5(orgSlug, currentHref)
+  const phase6Nav    = navPhase6Sub(orgSlug, currentHref)
+  const docsNav      = navDocuments(orgSlug)
 
   return (
     <Sidebar collapsible="icon">
@@ -435,6 +462,33 @@ export function AppSidebar({
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {inventoryNav.map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton asChild isActive={item.active}>
+                            <a href={item.href}>
+                              <item.icon className="size-3.5" />
+                              <span>{item.title}</span>
+                            </a>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Payroll — collapsible with sub-links */}
+              <Collapsible open={payrollOpen} onOpenChange={setPayrollOpen} className="group/payroll-collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip="Payroll" isActive={onPayroll && !payrollOpen}>
+                      <Users />
+                      <span>Payroll</span>
+                      <ChevronRight className="ml-auto size-3.5 transition-transform duration-200 group-data-[state=open]/payroll-collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {payrollNav.map((item) => (
                         <SidebarMenuSubItem key={item.title}>
                           <SidebarMenuSubButton asChild isActive={item.active}>
                             <a href={item.href}>
@@ -653,6 +707,7 @@ export function AppShell({
         activeHref={activeHref}
       />
       {children}
+      <CopilotButton orgSlug={orgSlug} />
     </SidebarProvider>
   )
 }

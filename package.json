@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.75",
+    "@ai-sdk/react": "^3.0.186",
     "@codemirror/lang-json": "^6.0.2",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.8.0",
@@ -48,6 +50,7 @@
     "@uppy/dashboard": "^5.1.1",
     "@uppy/react": "^5.2.0",
     "@vercel/analytics": "^2.0.1",
+    "ai": "^6.0.184",
     "axe-core": "^4.11.4",
     "bullmq": "^5.76.7",
     "class-variance-authority": "^0.7.1",
@@ -71,6 +74,7 @@
     "react-day-picker": "^10.0.0",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.75.0",
+    "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.11.0",
     "recharts": "^3.8.1",
     "shadcn": "^4.7.0",
