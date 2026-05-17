@@ -56,6 +56,7 @@ import {
   DatabaseZap,
   PackageSearch,
   Settings2,
+  Layers,
   ShoppingBag,
   UserCheck,
   CalendarDays,
@@ -116,7 +117,7 @@ function navMain(orgSlug: string, activeHref: string) {
   ].map((item) => ({ ...item, active: activeHref.startsWith(item.href) }))
 }
 
-const ACCOUNTING_ROOTS = ["accounts", "journals", "sales-invoices", "customers", "vendors", "purchase-bills", "payments", "bank-accounts", "reconciliation", "tax", "reports", "period-close", "audit", "imports", "settings/api-keys", "settings/webhooks", "tds", "tcs"]
+const ACCOUNTING_ROOTS = ["accounts", "journals", "sales-invoices", "customers", "vendors", "purchase-bills", "payments", "bank-accounts", "reconciliation", "tax", "reports", "period-close", "audit", "imports", "settings/api-keys", "settings/webhooks", "settings/voucher-types", "tds", "tcs"]
 const INVENTORY_ROOTS = ["inventory"]
 const PAYROLL_ROOTS = ["payroll"]
 
@@ -146,6 +147,7 @@ function navAccountingSub(orgSlug: string, activeHref: string) {
     { title: "Period Close",       icon: CalendarCheck, href: `/${orgSlug}/period-close`        },
     { title: "Audit Log",          icon: ShieldCheck,   href: `/${orgSlug}/audit`               },
     { title: "Imports",            icon: FileUp,        href: `/${orgSlug}/imports`             },
+    { title: "Voucher Types",      icon: Layers,        href: `/${orgSlug}/settings/voucher-types` },
     { title: "API Keys",           icon: KeyRound,      href: `/${orgSlug}/settings/api-keys`   },
     { title: "Webhooks",           icon: Webhook,       href: `/${orgSlug}/settings/webhooks`   },
   ].map((item) => ({ ...item, active: activeHref.startsWith(item.href) }))
