@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId } from "react"
+import { useState, useId, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Plus, Trash2 } from "lucide-react"
@@ -11,28 +11,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SimplifiedModeInput, simplifiedToLines, type SimplifiedLine } from "./simplified-mode-input"
+import type { VoucherFormConfig } from "@/lib/ledger/voucher-form-config"
 
 type Account = { id: string; code: string; name: string; type: string }
 
-type Line = {
-  key: string
-  accountId: string
-  direction: "DEBIT" | "CREDIT"
-  amount: string
-  description: string
+type ConfigRow = {
+  id:              string
+  label:           string
+  baseVoucherType: string
+  formConfig:      unknown
 }
 
-const VOUCHER_TYPES = [
-  { value: "JOURNAL_ENTRY",        label: "Journal Entry" },
-  { value: "PAYMENT_RECEIPT",      label: "Receipt Voucher" },
-  { value: "PAYMENT_DISBURSEMENT", label: "Payment Voucher" },
-  { value: "SALES_INVOICE",        label: "Sales Invoice" },
-  { value: "PURCHASE_BILL",        label: "Purchase Bill" },
-  { value: "CREDIT_NOTE",          label: "Credit Note" },
-  { value: "DEBIT_NOTE",           label: "Debit Note" },
-  { value: "CONTRA",               label: "Contra Entry" },
-  { value: "OPENING_BALANCE",      label: "Opening Balance" },
-]
+type Line = {
+  key:       string
+  accountId: string
+  direction: "DEBIT" | "CREDIT"
+  amount:    string
+  description: string
+}
 
 function emptyLine(key: string): Line {
   return { key, accountId: "", direction: "DEBIT", amount: "", description: "" }
@@ -45,14 +42,16 @@ function fmt(n: number) {
 export function JournalEntryForm({
   orgSlug,
   accounts,
+  configs = [],
 }: {
-  orgSlug: string
+  orgSlug:  string
   accounts: Account[]
+  configs?: ConfigRow[]
 }) {
   const router = useRouter()
   const uid    = useId()
 
-  const [voucherType, setVoucherType] = useState("JOURNAL_ENTRY")
+  const [configId,    setConfigId]    = useState<string>(configs[0]?.id ?? "")
   const [date,        setDate]        = useState(new Date().toISOString().slice(0, 10))
   const [description, setDescription] = useState("")
   const [narration,   setNarration]   = useState("")
@@ -61,12 +60,32 @@ export function JournalEntryForm({
     emptyLine(`${uid}-0`),
     emptyLine(`${uid}-1`),
   ])
+  const [simplified, setSimplified] = useState<SimplifiedLine>({
+    debitAccountId:  "",
+    creditAccountId: "",
+    amount:          "",
+  })
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
+
+  const selectedConfig = useMemo(
+    () => configs.find((c) => c.id === configId) ?? null,
+    [configs, configId],
+  )
+
+  const formConfig = selectedConfig?.formConfig as VoucherFormConfig | null | undefined
+
+  const isSimplified = formConfig?.simplifiedMode?.enabled ?? false
+  const amountLabel  = formConfig?.simplifiedMode?.amountLabel ?? "Amount"
 
   const totalDebit  = lines.filter((l) => l.direction === "DEBIT").reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
   const totalCredit = lines.filter((l) => l.direction === "CREDIT").reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
   const balanced    = Math.abs(totalDebit - totalCredit) < 0.001 && totalDebit > 0
+
+  const simplifiedAmount = parseFloat(simplified.amount) || 0
+  const simplifiedReady  = simplified.debitAccountId && simplified.creditAccountId && simplifiedAmount > 0
+
+  const canSubmit = isSimplified ? simplifiedReady : balanced
 
   function addLine() {
     setLines((prev) => [...prev, emptyLine(`${uid}-${Date.now()}`)])
@@ -82,19 +101,31 @@ export function JournalEntryForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!balanced) { setError("Debits must equal credits before saving."); return }
+    if (!canSubmit) {
+      setError(isSimplified ? "Fill in both accounts and an amount." : "Debits must equal credits before saving.")
+      return
+    }
 
     setSaving(true)
     setError(null)
 
+    const resolvedLines = isSimplified
+      ? simplifiedToLines(simplified)
+      : lines.map((l) => ({
+          accountId:   l.accountId,
+          direction:   l.direction,
+          amount:      parseFloat(l.amount),
+          description: l.description,
+        }))
+
     const payload = {
-      voucherType, date, description, narration, reference,
-      lines: lines.map((l) => ({
-        accountId:   l.accountId,
-        direction:   l.direction,
-        amount:      parseFloat(l.amount),
-        description: l.description,
-      })),
+      voucherType:        selectedConfig?.baseVoucherType ?? "JOURNAL_ENTRY",
+      voucherTypeConfigId: configId || undefined,
+      date,
+      description,
+      narration,
+      reference,
+      lines: resolvedLines,
     }
 
     const res = await fetch(`/api/organizations/${orgSlug}/journals`, {
@@ -145,14 +176,18 @@ export function JournalEntryForm({
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label>Voucher type *</Label>
-                <Select value={voucherType} onValueChange={setVoucherType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {VOUCHER_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {configs.length > 0 ? (
+                  <Select value={configId} onValueChange={setConfigId}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {configs.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground h-10 flex items-center">No active voucher types</p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -199,128 +234,138 @@ export function JournalEntryForm({
             </div>
           </div>
 
-          {/* Lines grid */}
-          <div className="rounded-lg border border-[rgba(55,50,47,0.10)] bg-white overflow-hidden">
-            <div className="border-b border-[rgba(55,50,47,0.10)] bg-[#F7F5F3] px-4 py-2">
-              <p className="text-sm font-semibold text-[#37322F]">Journal lines</p>
+          {/* Simplified mode */}
+          {isSimplified && (
+            <div className="rounded-lg border border-[rgba(55,50,47,0.10)] bg-white p-5 space-y-4">
+              <p className="font-semibold text-[#37322F]">Transaction</p>
+              <SimplifiedModeInput
+                value={simplified}
+                onChange={setSimplified}
+                accounts={accounts}
+                amountLabel={amountLabel}
+              />
             </div>
+          )}
 
-            {/* Column headers */}
-            <div className="grid grid-cols-[2.5fr_1fr_1fr_1.5fr_auto] gap-3 border-b border-[rgba(55,50,47,0.08)] bg-[#FAFAF9] px-4 py-2 text-xs font-medium text-[#605A57]">
-              <span>Account *</span>
-              <span>Direction *</span>
-              <span>Amount *</span>
-              <span>Description</span>
-              <span className="w-7" />
-            </div>
+          {/* Full line table */}
+          {!isSimplified && (
+            <div className="rounded-lg border border-[rgba(55,50,47,0.10)] bg-white overflow-hidden">
+              <div className="border-b border-[rgba(55,50,47,0.10)] bg-[#F7F5F3] px-4 py-2">
+                <p className="text-sm font-semibold text-[#37322F]">Journal lines</p>
+              </div>
 
-            {/* Lines */}
-            {lines.map((line, idx) => (
-              <div
-                key={line.key}
-                className="grid grid-cols-[2.5fr_1fr_1fr_1.5fr_auto] items-center gap-3 border-b border-[rgba(55,50,47,0.06)] px-4 py-2"
-              >
-                {/* Account selector */}
-                <Select
-                  value={line.accountId}
-                  onValueChange={(v) => updateLine(line.key, "accountId", v)}
-                  required
+              {/* Column headers */}
+              <div className="grid grid-cols-[2.5fr_1fr_1fr_1.5fr_auto] gap-3 border-b border-[rgba(55,50,47,0.08)] bg-[#FAFAF9] px-4 py-2 text-xs font-medium text-[#605A57]">
+                <span>Account *</span>
+                <span>Direction *</span>
+                <span>Amount *</span>
+                <span>Description</span>
+                <span className="w-7" />
+              </div>
+
+              {/* Lines */}
+              {lines.map((line) => (
+                <div
+                  key={line.key}
+                  className="grid grid-cols-[2.5fr_1fr_1fr_1.5fr_auto] items-center gap-3 border-b border-[rgba(55,50,47,0.06)] px-4 py-2"
                 >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Select account" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-64">
-                    {accountOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={line.accountId}
+                    onValueChange={(v) => updateLine(line.key, "accountId", v)}
+                    required
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-64">
+                      {accountOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                {/* Direction */}
-                <Select
-                  value={line.direction}
-                  onValueChange={(v) => updateLine(line.key, "direction", v as "DEBIT" | "CREDIT")}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DEBIT">Dr</SelectItem>
-                    <SelectItem value="CREDIT">Cr</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={line.direction}
+                    onValueChange={(v) => updateLine(line.key, "direction", v as "DEBIT" | "CREDIT")}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DEBIT">Dr</SelectItem>
+                      <SelectItem value="CREDIT">Cr</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                {/* Amount */}
-                <Input
-                  className="h-8 text-right font-mono text-sm"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={line.amount}
-                  onChange={(e) => updateLine(line.key, "amount", e.target.value)}
-                  placeholder="0.00"
-                  required
-                />
+                  <Input
+                    className="h-8 text-right font-mono text-sm"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={line.amount}
+                    onChange={(e) => updateLine(line.key, "amount", e.target.value)}
+                    placeholder="0.00"
+                    required
+                  />
 
-                {/* Line description */}
-                <Input
-                  className="h-8 text-sm"
-                  value={line.description}
-                  onChange={(e) => updateLine(line.key, "description", e.target.value)}
-                  placeholder="Optional"
-                />
+                  <Input
+                    className="h-8 text-sm"
+                    value={line.description}
+                    onChange={(e) => updateLine(line.key, "description", e.target.value)}
+                    placeholder="Optional"
+                  />
 
-                {/* Remove */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-[#605A57] hover:text-destructive"
-                  onClick={() => removeLine(line.key)}
-                  disabled={lines.length <= 2}
-                >
-                  <Trash2 className="size-3.5" />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 text-[#605A57] hover:text-destructive"
+                    onClick={() => removeLine(line.key)}
+                    disabled={lines.length <= 2}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              ))}
+
+              {/* Totals row */}
+              <div className="grid grid-cols-[2.5fr_1fr_1fr_1.5fr_auto] items-center gap-3 border-t border-[rgba(55,50,47,0.10)] bg-[#F7F5F3] px-4 py-2">
+                <span className="text-xs font-semibold text-[#37322F]">Total</span>
+                <span />
+                <div className="space-y-0.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[#605A57]">Dr</span>
+                    <span className="font-mono font-medium text-[#37322F]">{fmt(totalDebit)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[#605A57]">Cr</span>
+                    <span className="font-mono font-medium text-[#37322F]">{fmt(totalCredit)}</span>
+                  </div>
+                </div>
+                <div className="col-span-2 text-right">
+                  {totalDebit > 0 && (
+                    <span className={`text-xs font-medium ${balanced ? "text-green-600" : "text-destructive"}`}>
+                      {balanced ? "✓ Balanced" : `Out of balance by ${fmt(Math.abs(totalDebit - totalCredit))}`}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Add line */}
+              <div className="px-4 py-2 border-t border-[rgba(55,50,47,0.06)]">
+                <Button type="button" variant="ghost" size="sm" className="text-[#605A57] gap-1.5" onClick={addLine}>
+                  <Plus className="size-3.5" /> Add line
                 </Button>
               </div>
-            ))}
-
-            {/* Totals row */}
-            <div className="grid grid-cols-[2.5fr_1fr_1fr_1.5fr_auto] items-center gap-3 border-t border-[rgba(55,50,47,0.10)] bg-[#F7F5F3] px-4 py-2">
-              <span className="text-xs font-semibold text-[#37322F]">Total</span>
-              <span />
-              <div className="space-y-0.5">
-                <div className="flex justify-between text-xs">
-                  <span className="text-[#605A57]">Dr</span>
-                  <span className="font-mono font-medium text-[#37322F]">{fmt(totalDebit)}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-[#605A57]">Cr</span>
-                  <span className="font-mono font-medium text-[#37322F]">{fmt(totalCredit)}</span>
-                </div>
-              </div>
-              <div className="col-span-2 text-right">
-                {totalDebit > 0 && (
-                  <span className={`text-xs font-medium ${balanced ? "text-green-600" : "text-destructive"}`}>
-                    {balanced ? "✓ Balanced" : `Out of balance by ${fmt(Math.abs(totalDebit - totalCredit))}`}
-                  </span>
-                )}
-              </div>
             </div>
-
-            {/* Add line */}
-            <div className="px-4 py-2 border-t border-[rgba(55,50,47,0.06)]">
-              <Button type="button" variant="ghost" size="sm" className="text-[#605A57] gap-1.5" onClick={addLine}>
-                <Plus className="size-3.5" /> Add line
-              </Button>
-            </div>
-          </div>
+          )}
 
           <Separator />
 
           <div className="flex gap-3">
-            <Button type="submit" disabled={saving || !balanced}>
+            <Button type="submit" disabled={saving || !canSubmit}>
               {saving ? "Saving…" : "Save as draft"}
             </Button>
             <Button type="button" variant="outline" onClick={() => router.back()}>
