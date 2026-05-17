@@ -20,7 +20,7 @@ export default async function EditPOSSessionPage({ params }: { params: Promise<{
   return (
     <Phase5Shell title="Edit POS Session" description={posSession.sessionNumber}>
       <div className="space-y-5">
-        <POSSessionForm orgSlug={orgSlug} session={posSession} tills={tills} action={updatePOSSession.bind(null, orgSlug, id)} />
+        <POSSessionForm orgSlug={orgSlug} session={{ ...posSession, openingCash: posSession.openingCash?.toString() ?? null, expectedCash: posSession.expectedCash?.toString() ?? null, closingCash: posSession.closingCash?.toString() ?? null }} tills={tills} action={updatePOSSession.bind(null, orgSlug, id)} />
         <form action={deletePOSSession.bind(null, orgSlug, id)} className="max-w-4xl rounded-lg border border-red-200 bg-white p-5">
           <p className="font-semibold text-red-700">Cancel session</p>
           <button type="submit" className="mt-4 h-9 rounded-md bg-red-600 px-4 text-sm font-medium text-white">Cancel</button>

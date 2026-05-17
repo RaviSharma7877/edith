@@ -89,8 +89,8 @@ export async function POST(
   const voucherType = payment.type === "receipt" ? "PAYMENT_RECEIPT" : "PAYMENT_DISBURSEMENT"
 
   // Unwind allocations — restore amountPaid / amountDue on invoices and bills
-  const allocationUpdates: Prisma.PrismaPromise<any>[] = payment.allocations.flatMap((a) => {
-    const ops: Prisma.PrismaPromise<any>[] = []
+  const allocationUpdates: Prisma.PrismaPromise<unknown>[] = payment.allocations.flatMap((a) => {
+    const ops: Prisma.PrismaPromise<unknown>[] = []
     if (a.invoiceId) {
       ops.push(
         prisma.salesInvoice.update({
@@ -116,7 +116,7 @@ export async function POST(
     return ops
   })
 
-  const txOps: Prisma.PrismaPromise<any>[] = [
+  const txOps: Prisma.PrismaPromise<unknown>[] = [
     prisma.journalEntry.create({
       data: {
         companyId:    ctx.company.id,
@@ -164,7 +164,7 @@ export async function POST(
     prisma.paymentAllocation.deleteMany({ where: { paymentId: id } }),
     ...allocationUpdates,
   ]
-  const txResults = await prisma.$transaction(txOps)
+  const txResults = await prisma.$transaction(txOps) as [{ id: string }, { id: string }, ...unknown[]]
   const reversalJournal  = txResults[0]
   const reversalPayment  = txResults[1]
 

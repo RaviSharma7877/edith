@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
+import type { DocumentStatus } from "@prisma/client"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { PaymentsClient } from "./payments-client"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -27,7 +28,7 @@ export default async function PaymentsPage({
   const where  = {
     companyId:  ctx.company.id,
     ...(sp.type       ? { type: sp.type }                        : {}),
-    ...(sp.status     ? { status: sp.status as any }             : {}),
+    ...(sp.status     ? { status: sp.status as DocumentStatus }    : {}),
     ...(sp.customerId ? { customerId: sp.customerId }            : {}),
     ...(sp.vendorId   ? { vendorId: sp.vendorId }                : {}),
   }
@@ -80,7 +81,7 @@ export default async function PaymentsPage({
       <div className="flex-1 overflow-auto p-6">
         <PaymentsClient
           orgSlug={orgSlug}
-          initialPayments={payments as any}
+          initialPayments={payments.map((p) => ({ ...p, date: p.date instanceof Date ? p.date.toISOString() : p.date, amount: p.amount?.toString() ?? "0" }))}
           initialPagination={pagination}
           customers={customers}
           vendors={vendors}

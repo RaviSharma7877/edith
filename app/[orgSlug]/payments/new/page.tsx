@@ -58,7 +58,7 @@ export default async function NewPaymentPage({
           orgSlug={orgSlug}
           customers={customers}
           vendors={vendors}
-          bankAccounts={bankAccounts as any}
+          bankAccounts={bankAccounts}
           prefillCustomerId={sp.customerId}
           prefillVendorId={sp.vendorId}
         />

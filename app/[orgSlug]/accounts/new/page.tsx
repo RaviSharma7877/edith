@@ -170,7 +170,7 @@ export default function NewAccountPage() {
               <div key={field} className="flex items-center gap-2">
                 <Checkbox
                   id={field}
-                  checked={(form as any)[field]}
+                  checked={(form as Record<string, unknown>)[field] as boolean}
                   onCheckedChange={(v) => set(field, v)}
                 />
                 <Label htmlFor={field} className="font-normal cursor-pointer">{label}</Label>

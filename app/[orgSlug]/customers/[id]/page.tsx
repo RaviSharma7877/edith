@@ -74,7 +74,7 @@ export default async function CustomerDetailPage({
 
       <div className="flex-1 overflow-auto p-6">
         <div className="w-full min-w-0 space-y-6">
-          <CustomerEditClient orgSlug={orgSlug} customer={customer as any} />
+          <CustomerEditClient orgSlug={orgSlug} customer={{ ...customer, creditLimit: customer.creditLimit?.toString() ?? null, billingAddress: customer.billingAddress as Record<string, string> | null }} />
 
           {/* Recent invoices */}
           {customer.salesInvoices.length > 0 && (

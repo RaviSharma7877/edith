@@ -65,10 +65,10 @@ export async function GET(
   for (const inv of invoices) {
     const taxable = Number(inv.subtotal)
     // Use per-line tax breakdown
-    const linesCgst   = inv.lines.reduce((s, l) => s + Number((l as any).cgstRate  ? Number((l as any).cgstRate)  / 100 * Number(l.lineTotal) : 0), 0)
-    const linesSgst   = inv.lines.reduce((s, l) => s + Number((l as any).sgstRate  ? Number((l as any).sgstRate)  / 100 * Number(l.lineTotal) : 0), 0)
-    const linesIgst   = inv.lines.reduce((s, l) => s + Number((l as any).igstRate  ? Number((l as any).igstRate)  / 100 * Number(l.lineTotal) : 0), 0)
-    const linesCess   = inv.lines.reduce((s, l) => s + Number((l as any).cessRate  ? Number((l as any).cessRate)  / 100 * Number(l.lineTotal) : 0), 0)
+    const linesCgst   = inv.lines.reduce((s, l) => s + Number(l.cgstRate  ? Number(l.cgstRate)  / 100 * Number(l.lineTotal) : 0), 0)
+    const linesSgst   = inv.lines.reduce((s, l) => s + Number(l.sgstRate  ? Number(l.sgstRate)  / 100 * Number(l.lineTotal) : 0), 0)
+    const linesIgst   = inv.lines.reduce((s, l) => s + Number(l.igstRate  ? Number(l.igstRate)  / 100 * Number(l.lineTotal) : 0), 0)
+    const linesCess   = inv.lines.reduce((s, l) => s + Number(l.cessRate  ? Number(l.cessRate)  / 100 * Number(l.lineTotal) : 0), 0)
 
     // Fallback: if no line-level split, derive from taxAmount and placeOfSupply
     const totalTax = Number(inv.taxAmount)
@@ -118,12 +118,12 @@ export async function GET(
       const hsn = line.hsnCode ?? "MISC"
       const qty = Number(line.quantity)
       const lt  = Number(line.lineTotal)
-      const lTaxable = Number((line as any).unitPrice) * qty * (1 - (Number((line as any).discountPct ?? 0)) / 100)
+      const lTaxable = Number(line.unitPrice) * qty * (1 - (Number(line.discountPct ?? 0)) / 100)
       const lTax = Number(line.taxAmount ?? 0)
-      const lCgst = (line as any).cgstRate ? lTaxable * Number((line as any).cgstRate) / 100 : (!isInterstate ? lTax / 2 : 0)
-      const lSgst = (line as any).sgstRate ? lTaxable * Number((line as any).sgstRate) / 100 : (!isInterstate ? lTax / 2 : 0)
-      const lIgst = (line as any).igstRate ? lTaxable * Number((line as any).igstRate) / 100 : (isInterstate ? lTax : 0)
-      const lCess = (line as any).cessRate ? lTaxable * Number((line as any).cessRate) / 100 : 0
+      const lCgst = line.cgstRate ? lTaxable * Number(line.cgstRate) / 100 : (!isInterstate ? lTax / 2 : 0)
+      const lSgst = line.sgstRate ? lTaxable * Number(line.sgstRate) / 100 : (!isInterstate ? lTax / 2 : 0)
+      const lIgst = line.igstRate ? lTaxable * Number(line.igstRate) / 100 : (isInterstate ? lTax : 0)
+      const lCess = line.cessRate ? lTaxable * Number(line.cessRate) / 100 : 0
 
       const existing = hsnMap.get(hsn)
       if (existing) {

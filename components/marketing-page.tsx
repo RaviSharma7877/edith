@@ -9,6 +9,7 @@ type MarketingPageProps = {
     description: string
     items: string[]
     href?: string
+    hrefLabel?: string
   }>
   deepDive?: Array<{
     title: string
@@ -89,7 +90,7 @@ export function MarketingPage({ badge, title, description, sections, deepDive = 
               </div>
               {section.href && (
                 <Link href={section.href} className="mt-auto text-sm font-semibold text-[#37322F] underline underline-offset-4">
-                  Explore {section.title.toLowerCase()}
+                  {section.hrefLabel ?? `Explore ${section.title.toLowerCase()}`}
                 </Link>
               )}
             </article>

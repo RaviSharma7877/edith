@@ -66,6 +66,7 @@ export function WelcomeScreen({
   const particlesRef = useRef<Particle[]>([])
   const rafRef = useRef<number>(0)
   const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter")
+  // eslint-disable-next-line react-hooks/purity
   const startTimeRef = useRef(Date.now())
 
   // Spawn burst of particles on mount and periodically

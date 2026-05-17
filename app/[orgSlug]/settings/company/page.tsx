@@ -50,7 +50,7 @@ export default async function CompanySettingsPage({ params }: Props) {
       orgs={orgs}
       userName={userName}
       userEmail={session.user.email}
-      company={effectiveCompany as any}
+      company={effectiveCompany as { name: string; legalName: string | null }}
     />
   )
 }

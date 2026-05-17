@@ -9,7 +9,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function fmt(v: { toNumber?: () => number } | string | number | null | undefined) {
   if (v === null || v === undefined) return "—"
-  const n = typeof v === "object" && v && "toNumber" in v ? (v as any).toNumber() : Number(v)
+  const n = typeof v === "object" && v && "toNumber" in v ? (v as { toNumber: () => number }).toNumber() : Number(v)
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function fmtDate(d: Date | string | null | undefined) {
@@ -45,6 +45,8 @@ export default async function BankAccountDetailPage({
   ])
   if (!account) notFound()
 
+  const accountForEdit = { ...account, currentBalance: account.currentBalance?.toString() ?? "0" }
+
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -66,7 +68,7 @@ export default async function BankAccountDetailPage({
 
       <div className="flex-1 overflow-auto p-6">
         <div className="w-full min-w-0 space-y-6">
-          <BankAccountEdit orgSlug={orgSlug} account={account as any} />
+          <BankAccountEdit orgSlug={orgSlug} account={accountForEdit} />
 
           {/* Statements */}
           <div className="rounded-lg border border-[rgba(55,50,47,0.10)] bg-white overflow-hidden">

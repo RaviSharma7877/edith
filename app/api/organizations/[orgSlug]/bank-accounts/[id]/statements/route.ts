@@ -91,13 +91,13 @@ export async function POST(
       sourceType:     sourceType ?? "csv",
       importedById:   ctx.userId,
       lines: {
-        create: lines.map((l: any) => ({
+        create: (lines as { date: string; description: string; reference?: string; debitAmount?: string | number; creditAmount?: string | number; balance?: string | number }[]).map((l) => ({
           date:         new Date(l.date),
           description:  l.description.trim(),
           reference:    l.reference?.trim() || null,
-          debitAmount:  l.debitAmount  ? parseFloat(l.debitAmount)  : null,
-          creditAmount: l.creditAmount ? parseFloat(l.creditAmount) : null,
-          balance:      l.balance      ? parseFloat(l.balance)      : null,
+          debitAmount:  l.debitAmount  ? parseFloat(String(l.debitAmount))  : null,
+          creditAmount: l.creditAmount ? parseFloat(String(l.creditAmount)) : null,
+          balance:      l.balance      ? parseFloat(String(l.balance))      : null,
         })),
       },
     },

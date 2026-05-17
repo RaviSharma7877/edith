@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { X, ChevronLeft } from "lucide-react"
 import {
@@ -23,11 +23,7 @@ export function CopilotDrawer({ orgSlug, onClose }: Props) {
 
   const agents = eligibleAgentsForPath(pathname)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
-  const [contextHints, setContextHints] = useState<ContextHints>({})
-
-  useEffect(() => {
-    setContextHints(deriveContextHints(pathname, searchParams))
-  }, [pathname, searchParams])
+  const contextHints = useMemo(() => deriveContextHints(pathname, searchParams), [pathname, searchParams])
 
   const selectedAgent = selectedAgentId ? AGENT_META_MAP[selectedAgentId] : null
 
@@ -60,7 +56,7 @@ export function CopilotDrawer({ orgSlug, onClose }: Props) {
 
       {/* Context chips — only when agent selected and hints exist */}
       {selectedAgent && Object.keys(contextHints).length > 0 && (
-        <ContextChips onHintsChange={setContextHints} />
+        <ContextChips onHintsChange={() => {}} />
       )}
 
       {/* Body */}

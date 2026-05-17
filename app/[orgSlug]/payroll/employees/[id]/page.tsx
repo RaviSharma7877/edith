@@ -18,7 +18,7 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ o
   return (
     <Phase5Shell title="Edit Employee" description={`${employee.employeeCode} - ${employee.firstName}`}>
       <div className="space-y-5">
-        <EmployeeForm orgSlug={orgSlug} employee={employee} action={updateEmployee.bind(null, orgSlug, id)} />
+        <EmployeeForm orgSlug={orgSlug} employee={{ ...employee, monthlyCtc: employee.monthlyCtc?.toString() ?? null }} action={updateEmployee.bind(null, orgSlug, id)} />
         <form action={deleteEmployee.bind(null, orgSlug, id)} className="max-w-5xl rounded-lg border border-red-200 bg-white p-5">
           <p className="font-semibold text-red-700">Delete employee</p>
           <p className="mt-1 text-sm text-[#605A57]">Soft-delete this employee from active payroll lists.</p>

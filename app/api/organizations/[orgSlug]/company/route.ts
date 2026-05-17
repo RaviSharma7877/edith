@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@prisma/client"
 
 // ── Auth + membership guard ───────────────────────────────────────────────────
 
@@ -85,11 +86,11 @@ export async function PATCH(
     // Create new default company for this workspace
     updated = await prisma.company.create({
       data: {
-        ...data as any,
+        ...(data as Record<string, string | null>),
         workspaceId: result.workspaceId,
         isDefault: true,
         isActive: true,
-      },
+      } as unknown as Prisma.CompanyCreateInput,
     })
   }
 

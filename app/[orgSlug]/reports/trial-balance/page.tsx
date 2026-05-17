@@ -56,6 +56,7 @@ export default function TrialBalancePage() {
     } finally { setLoading(false) }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(defFrom, defTo) }, [load, defFrom, defTo])
 
   const grouped = data

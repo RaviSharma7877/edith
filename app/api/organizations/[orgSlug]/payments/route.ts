@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { DocumentStatus } from "@prisma/client"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { NextResponse } from "next/server"
 
@@ -41,7 +42,7 @@ export async function GET(
   const where = {
     companyId: ctx.company.id,
     ...(type       ? { type }                      : {}),
-    ...(status     ? { status: status as any }     : {}),
+    ...(status     ? { status: status as DocumentStatus } : {}),
     ...(customerId ? { customerId }                : {}),
     ...(vendorId   ? { vendorId }                  : {}),
   }

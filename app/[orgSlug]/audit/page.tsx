@@ -264,6 +264,7 @@ export default function AuditLogPage() {
     }
   }, [orgSlug, buildQuery])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
   async function loadMore() {

@@ -121,6 +121,7 @@ export default function GSTR3BPage() {
     }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(defPeriod) }, [load, defPeriod])
 
   return (

@@ -90,12 +90,14 @@ export async function POST(
     }
   }
 
-  const totalDebit  = lines
-    .filter((l: any) => l.direction === "DEBIT")
-    .reduce((s: number, l: any) => s + Number(l.amount), 0)
-  const totalCredit = lines
-    .filter((l: any) => l.direction === "CREDIT")
-    .reduce((s: number, l: any) => s + Number(l.amount), 0)
+  type LineInput = { direction: string; amount: number | string; accountId: string; description?: string; reference?: string; costCenterId?: string; projectId?: string; branchId?: string; taxCodeId?: string; taxRate?: number | null; taxAmount?: number | null; baseAmount?: number | null }
+  const typedLines = lines as LineInput[]
+  const totalDebit  = typedLines
+    .filter((l) => l.direction === "DEBIT")
+    .reduce((s: number, l) => s + Number(l.amount), 0)
+  const totalCredit = typedLines
+    .filter((l) => l.direction === "CREDIT")
+    .reduce((s: number, l) => s + Number(l.amount), 0)
 
   let configPrefix:     string | undefined
   let resolvedConfigId: string | undefined
@@ -129,7 +131,7 @@ export async function POST(
       totalCredit:  String(totalCredit),
       createdById:  ctx.userId,
       lines: {
-        create: lines.map((l: any) => ({
+        create: typedLines.map((l) => ({
           accountId:    l.accountId,
           direction:    l.direction as TransactionDirection,
           amount:       String(Number(l.amount)),

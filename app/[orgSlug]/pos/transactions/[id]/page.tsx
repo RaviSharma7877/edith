@@ -21,7 +21,7 @@ export default async function EditPOSTransactionPage({ params }: { params: Promi
   return (
     <Phase5Shell title="Edit POS Sale" description={transaction.transactionNumber}>
       <div className="space-y-5">
-        <POSTransactionForm orgSlug={orgSlug} transaction={transaction} sessions={sessions.map((s) => ({ id: s.id, name: s.sessionNumber }))} customers={customers} action={updatePOSTransaction.bind(null, orgSlug, id)} />
+        <POSTransactionForm orgSlug={orgSlug} transaction={{ ...transaction, subtotal: transaction.subtotal?.toString() ?? null, taxAmount: transaction.taxAmount?.toString() ?? null, discountAmount: transaction.discountAmount?.toString() ?? null, totalAmount: transaction.totalAmount?.toString() ?? null, paidAmount: transaction.paidAmount?.toString() ?? null, changeDue: transaction.changeDue?.toString() ?? null }} sessions={sessions.map((s) => ({ id: s.id, name: s.sessionNumber }))} customers={customers} action={updatePOSTransaction.bind(null, orgSlug, id)} />
         <form action={deletePOSTransaction.bind(null, orgSlug, id)} className="max-w-5xl rounded-lg border border-red-200 bg-white p-5">
           <p className="font-semibold text-red-700">Void transaction</p>
           <button type="submit" className="mt-4 h-9 rounded-md bg-red-600 px-4 text-sm font-medium text-white">Void</button>

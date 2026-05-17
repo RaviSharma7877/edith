@@ -206,6 +206,7 @@ export default function ApiKeysPage() {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadKeys() }, [])
 
   async function revoke(id: string) {
@@ -240,7 +241,7 @@ export default function ApiKeysPage() {
           <div className="rounded-lg border bg-muted/30 px-4 py-3 flex gap-3 text-sm text-muted-foreground">
             <AlertTriangle className="size-4 shrink-0 mt-0.5 text-amber-500" />
             API keys are shown only once at creation. Keys are hashed and cannot be retrieved.
-            Revoke a key if it's compromised.
+            Revoke a key if it&apos;s compromised.
           </div>
 
           {loading && <div className="text-sm text-muted-foreground py-8 text-center">Loading…</div>}

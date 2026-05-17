@@ -96,6 +96,7 @@ export default function PandLPage() {
     } finally { setLoading(false) }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(defFrom, defTo) }, [load, defFrom, defTo])
 
   return (

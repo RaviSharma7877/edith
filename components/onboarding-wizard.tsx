@@ -89,9 +89,9 @@ const schema = z.object({
   city:         z.string().max(80).optional().or(z.literal("")),
   state:        z.string().max(80).optional().or(z.literal("")),
   postalCode:   z.string().max(20).optional().or(z.literal("")),
-  fiscalYearStart: z.string().default("4"),
-  taxMode:         z.string().default("GST"),
-  coaTemplate:     z.string().default("STANDARD_INDIA"),
+  fiscalYearStart: z.string(),
+  taxMode:         z.string(),
+  coaTemplate:     z.string(),
   inviteEmails:    z.string().optional().or(z.literal("")),
 })
 

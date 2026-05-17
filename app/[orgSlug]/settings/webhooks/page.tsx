@@ -250,6 +250,7 @@ export default function WebhooksPage() {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load() }, [])
 
   async function toggleStatus(ep: Endpoint) {

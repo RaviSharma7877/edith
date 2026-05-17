@@ -93,7 +93,7 @@ export default async function ReconciliationRunPage({
       <ReconciliationWorkspace
         orgSlug={orgSlug}
         runId={runId}
-        initialData={{ run: run as any, unmatchedJLines: unmatchedJLines as any }}
+        initialData={JSON.parse(JSON.stringify({ run, unmatchedJLines }))}
         adjustAccounts={adjustAccounts}
       />
     </div>

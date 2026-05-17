@@ -122,7 +122,7 @@ export async function DELETE(
   const allocAmt    = Number(allocation.amount)
   const discountAmt = Number(allocation.discountAmount)
 
-  const ops: Prisma.PrismaPromise<any>[] = [
+  const ops: Prisma.PrismaPromise<unknown>[] = [
     prisma.paymentAllocation.delete({ where: { id: allocationId } }),
   ]
 

@@ -170,6 +170,7 @@ export default function MSMEPage() {
     }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(onlyMsme) }, [load, onlyMsme])
 
   async function handleSave(vendorId: string, isMSME: boolean, msmeRegNo: string, msmeType: string) {

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { seedCompanyVoucherTypes } from "@/lib/ledger/seed-voucher-types"
+import { CoaTemplate, TaxMode } from "@prisma/client"
 
 function toSlug(name: string): string {
   return name
@@ -170,8 +171,8 @@ export async function POST(req: Request) {
         timezone:            "Asia/Kolkata",
         fiscalYearStart:     fyStartMonth,
         locale:              country === "IN" ? "en-IN" : "en-US",
-        coaTemplate:         coaTemplate as any,
-        taxMode:             taxMode as any,
+        coaTemplate:         coaTemplate as CoaTemplate,
+        taxMode:             taxMode as TaxMode,
         openingBalanceChoice,
         isDefault:           true,
         setupCompleted:      true,

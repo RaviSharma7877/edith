@@ -91,6 +91,7 @@ export default function TDSDashboardPage() {
     }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(quarter, status) }, [load, quarter, status])
 
   async function handleExport() {

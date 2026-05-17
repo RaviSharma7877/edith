@@ -88,7 +88,7 @@ export async function POST(
   })
   existingMatches.forEach((m) => { if (m.journalLineId) alreadyMatchedLineIds.add(m.journalLineId) })
 
-  const suggestOps: Prisma.PrismaPromise<any>[] = []
+  const suggestOps: Prisma.PrismaPromise<unknown>[] = []
 
   for (const stmtLine of unreconciledLines) {
     const stmtAmt = Number(stmtLine.creditAmount ?? stmtLine.debitAmount ?? 0)

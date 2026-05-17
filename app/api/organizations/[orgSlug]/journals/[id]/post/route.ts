@@ -3,20 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveCompany } from "@/lib/api/resolve-company"
-import { createHash } from "crypto"
-
-function computeEntryHash(
-  previousHash: string | null,
-  voucherNumber: string,
-  date: Date,
-  totalDebit: string,
-  lines: Array<{ accountId: string; direction: string; amount: string }>,
-): string {
-  const sorted = [...lines].sort((a, b) => a.accountId.localeCompare(b.accountId))
-  const lineStr = sorted.map((l) => `${l.accountId}:${l.direction}:${l.amount}`).join("|")
-  const payload = `${previousHash ?? "0"}|${voucherNumber}|${date.toISOString()}|${totalDebit}|${lineStr}`
-  return createHash("sha256").update(payload).digest("hex")
-}
+import { computeEntryHash } from "@/lib/ledger/ledger-utils"
 
 // ── POST /api/organizations/[orgSlug]/journals/[id]/post ──────────────────────
 
@@ -32,7 +19,7 @@ export async function POST(
   if (!ctx) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const entry = await prisma.journalEntry.findFirst({
-    where: { id, companyId: ctx.company.id },
+    where:   { id, companyId: ctx.company.id },
     include: { lines: { include: { account: true } } },
   })
   if (!entry) return NextResponse.json({ error: "Journal entry not found" }, { status: 404 })
@@ -44,11 +31,13 @@ export async function POST(
     )
   }
 
-  // Debit = Credit
-  const totalDebit  = entry.lines.filter((l) => l.direction === "DEBIT")
-                                 .reduce((s, l) => s + Number(l.amount), 0)
-  const totalCredit = entry.lines.filter((l) => l.direction === "CREDIT")
-                                 .reduce((s, l) => s + Number(l.amount), 0)
+  // Debit must equal Credit
+  const totalDebit  = entry.lines
+    .filter((l) => l.direction === "DEBIT")
+    .reduce((s, l) => s + Number(l.amount), 0)
+  const totalCredit = entry.lines
+    .filter((l) => l.direction === "CREDIT")
+    .reduce((s, l) => s + Number(l.amount), 0)
 
   if (Math.abs(totalDebit - totalCredit) > 0.001) {
     return NextResponse.json(
@@ -80,7 +69,7 @@ export async function POST(
     )
   }
 
-  // Hash chain
+  // Build hash chain from ledger-utils (single source of truth)
   const lastPosted = await prisma.journalEntry.findFirst({
     where:   { companyId: ctx.company.id, status: "POSTED" },
     orderBy: { postedAt: "desc" },
@@ -91,8 +80,8 @@ export async function POST(
     lastPosted?.entryHash ?? null,
     entry.voucherNumber,
     entry.date,
-    String(totalDebit),
-    entry.lines.map((l) => ({ accountId: l.accountId, direction: l.direction, amount: String(l.amount) })),
+    totalDebit,
+    entry.lines.map((l) => ({ accountId: l.accountId, direction: l.direction, amount: Number(l.amount) })),
   )
 
   const posted = await prisma.journalEntry.update({

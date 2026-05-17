@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Building2, Users, LayoutGrid, ExternalLink } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -67,9 +68,9 @@ export function AdminDashboard({ stats, recentWorkspaces }: Props) {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold">Recent workspaces</CardTitle>
-            <a href="/admin/tenants" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+            <Link href="/admin/tenants" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
               View all <ExternalLink className="size-3" />
-            </a>
+            </Link>
           </div>
         </CardHeader>
         <CardContent className="p-0">

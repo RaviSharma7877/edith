@@ -43,7 +43,7 @@ export async function POST(
     bankChartAccountId = ba.chartAccountId
   } else {
     const ba = await prisma.chartAccount.findFirst({
-      where: { companyId: ctx.company.id, subtype: { in: ["BANK", "CASH"] as any }, isActive: true, isPosting: true },
+      where: { companyId: ctx.company.id, subtype: { in: ["BANK", "CASH"] as ["BANK", "CASH"] }, isActive: true, isPosting: true },
     })
     if (!ba) return NextResponse.json({ error: "No active Bank or Cash account found." }, { status: 422 })
     bankChartAccountId = ba.id

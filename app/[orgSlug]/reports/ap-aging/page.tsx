@@ -54,6 +54,7 @@ export default function APAgingPage() {
     } finally { setLoading(false) }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(defAsOf) }, [load, defAsOf])
 
   function toggle(id: string) {

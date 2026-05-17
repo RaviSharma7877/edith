@@ -59,8 +59,8 @@ interface AccountingClientProps {
     openPeriods: number
     draftJournals: number
   }
-  recentJournals: any[]
-  recentActivity: any[]
+  recentJournals: Array<{ id: string; voucherNumber: string; date: Date | string; voucherType: string; totalDebit: number | string; status: string }>
+  recentActivity: Array<{ id: string; createdAt: Date | string; action: string; resourceName: string | null; resourceType: string; description: string | null; actor: { displayName: string | null; email: string } | null }>
 }
 
 export function AccountingClient({
@@ -206,7 +206,7 @@ export function AccountingClient({
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Company setup incomplete</p>
                     <p className="text-sm text-amber-800 dark:text-amber-300">
-                      You haven't configured your company details. Complete your profile to enable all accounting features.
+                      You haven&apos;t configured your company details. Complete your profile to enable all accounting features.
                     </p>
                     <Button asChild variant="link" size="sm" className="p-0 h-auto text-amber-900 dark:text-amber-200 font-semibold">
                       <Link href={`/supna/${orgSlug}/settings/company`}>
@@ -420,7 +420,7 @@ export function AccountingClient({
                                 </p>
                                 {log.description && (
                                   <p className="text-xs text-muted-foreground line-clamp-1 italic">
-                                    "{log.description}"
+                                    &quot;{log.description}&quot;
                                   </p>
                                 )}
                               </div>

@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+type BillingAddress = { line1?: string; city?: string; state?: string; pincode?: string } | null
+
 type Vendor = {
   id: string; name: string; code: string | null; email: string | null; phone: string | null
   gstin: string | null; pan: string | null; paymentTerms: number | null
-  billingAddress: any; isActive: boolean
+  billingAddress: BillingAddress | unknown; isActive: boolean
 }
 
 export function VendorEditClient({ orgSlug, vendor }: { orgSlug: string; vendor: Vendor }) {
   const router = useRouter()
-  const addr   = vendor.billingAddress as any
+  const addr   = vendor.billingAddress as BillingAddress
 
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)

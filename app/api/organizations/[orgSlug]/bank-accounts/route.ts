@@ -49,7 +49,7 @@ export async function POST(
     where: {
       id:        chartAccountId,
       companyId: ctx.company.id,
-      subtype:   { in: ["BANK", "CASH"] as any },
+      subtype:   { in: ["BANK", "CASH"] as ["BANK", "CASH"] },
       isActive:  true,
     },
   })

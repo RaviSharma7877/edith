@@ -38,8 +38,8 @@ export default async function TaxSettingsPage({
       <div className="flex-1 overflow-auto p-6">
         <TaxSettingsClient
           orgSlug={orgSlug}
-          initialRegistrations={registrations as any}
-          initialTaxCodes={taxCodes as any}
+          initialRegistrations={registrations as unknown as { id: string; type: string; number: string; effectiveFrom: string; stateCode: string | null; isActive: boolean }[]}
+          initialTaxCodes={taxCodes as unknown as { id: string; code: string; name: string; rate: number; type: string; effectiveFrom: string; effectiveTo: string | null; isActive: boolean; isDefault: boolean }[]}
         />
       </div>
     </div>

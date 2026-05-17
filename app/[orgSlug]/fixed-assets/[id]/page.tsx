@@ -18,7 +18,7 @@ export default async function EditFixedAssetPage({ params }: { params: Promise<{
   return (
     <Phase5Shell title="Edit Fixed Asset" description={`${asset.assetCode} - ${asset.name}`}>
       <div className="space-y-5">
-        <FixedAssetForm orgSlug={orgSlug} asset={asset} action={updateFixedAsset.bind(null, orgSlug, id)} />
+        <FixedAssetForm orgSlug={orgSlug} asset={{ ...asset, purchaseCost: asset.purchaseCost?.toString() ?? null, salvageValue: asset.salvageValue?.toString() ?? null, accumulatedDepreciation: asset.accumulatedDepreciation?.toString() ?? null }} action={updateFixedAsset.bind(null, orgSlug, id)} />
         <form action={deleteFixedAsset.bind(null, orgSlug, id)} className="max-w-5xl rounded-lg border border-red-200 bg-white p-5">
           <p className="font-semibold text-red-700">Delete asset</p>
           <p className="mt-1 text-sm text-[#605A57]">Soft-delete this asset from the active register.</p>

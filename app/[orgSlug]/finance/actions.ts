@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { resolveCompany } from "@/lib/api/resolve-company"
 
-export async function createCostCentre(orgSlug: string, userEmail: string, data: any) {
+export async function createCostCentre(orgSlug: string, userEmail: string, data: { name: string; type?: string; parentId?: string | null; isActive?: boolean }) {
   const ctx = await resolveCompany(orgSlug, userEmail)
   if (!ctx) throw new Error("Unauthorized")
 
@@ -22,7 +22,7 @@ export async function createCostCentre(orgSlug: string, userEmail: string, data:
   return result
 }
 
-export async function createBudget(orgSlug: string, userEmail: string, data: any) {
+export async function createBudget(orgSlug: string, userEmail: string, data: { name: string; fiscalYearId: string; costCentreId?: string; accountId?: string; periodType?: string; lines: Array<{ period: string; amount: number }> }) {
   const ctx = await resolveCompany(orgSlug, userEmail)
   if (!ctx) throw new Error("Unauthorized")
 
@@ -35,7 +35,7 @@ export async function createBudget(orgSlug: string, userEmail: string, data: any
       accountId: data.accountId || null,
       periodType: data.periodType || "monthly",
       lines: {
-        create: data.lines.map((line: any) => ({
+        create: data.lines.map((line: { period: string; amount: number }) => ({
           period: line.period,
           amount: line.amount,
         })),
@@ -47,7 +47,7 @@ export async function createBudget(orgSlug: string, userEmail: string, data: any
   return result
 }
 
-export async function createCheque(orgSlug: string, userEmail: string, data: any) {
+export async function createCheque(orgSlug: string, userEmail: string, data: { bankAccountId: string; paymentId?: string | null; chequeNumber: string; chequeDate: string; amount: number; payee?: string | null; status?: string; notes?: string | null }) {
   const ctx = await resolveCompany(orgSlug, userEmail)
   if (!ctx) throw new Error("Unauthorized")
 
@@ -69,7 +69,7 @@ export async function createCheque(orgSlug: string, userEmail: string, data: any
   return result
 }
 
-export async function createInterestRule(orgSlug: string, userEmail: string, data: any) {
+export async function createInterestRule(orgSlug: string, userEmail: string, data: { name: string; ratePercent: number; basis?: string; graceDays?: number; appliesTo?: string; isActive?: boolean }) {
   const ctx = await resolveCompany(orgSlug, userEmail)
   if (!ctx) throw new Error("Unauthorized")
 

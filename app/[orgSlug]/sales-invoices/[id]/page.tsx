@@ -9,7 +9,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function fmt(v: { toNumber?: () => number } | string | number | null | undefined) {
   if (v === null || v === undefined) return "—"
-  const n = typeof v === "object" && v && "toNumber" in v ? (v as any).toNumber() : Number(v)
+  const n = typeof v === "object" && v && "toNumber" in v ? (v as { toNumber: () => number }).toNumber() : Number(v)
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function fmtDate(d: Date | string | null | undefined) {
@@ -78,10 +78,10 @@ export default async function InvoiceDetailPage({
             invoiceId={id}
             status={invoice.status}
             isCreditNote={invoice.isCreditNote}
-            eInvoiceStatus={(invoice as any).eInvoiceStatus ?? null}
-            irnNumber={(invoice as any).irnNumber ?? null}
-            eWayBillNumber={(invoice as any).eWayBillNumber ?? null}
-            eWayBillExpiry={(invoice as any).eWayBillExpiry?.toISOString() ?? null}
+            eInvoiceStatus={(invoice as Record<string, unknown>).eInvoiceStatus as string ?? null}
+            irnNumber={(invoice as Record<string, unknown>).irnNumber as string ?? null}
+            eWayBillNumber={(invoice as Record<string, unknown>).eWayBillNumber as string ?? null}
+            eWayBillExpiry={(invoice as unknown as Record<string, Date | null>).eWayBillExpiry?.toISOString() ?? null}
           />
         </div>
       </header>

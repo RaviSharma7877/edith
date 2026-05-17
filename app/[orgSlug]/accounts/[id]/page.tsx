@@ -31,9 +31,11 @@ export default async function AccountDetailPage({
   })
   if (!account) notFound()
 
+  const accountForEdit = { ...account, openingBalance: account.openingBalance?.toString() ?? null }
+
   return (
     <div className="flex h-svh flex-1 flex-col overflow-hidden bg-[#F7F5F3]">
-      <AccountEditClient orgSlug={orgSlug} account={account as any} />
+      <AccountEditClient orgSlug={orgSlug} account={accountForEdit} />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
+import type { DocumentStatus } from "@prisma/client"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { BillsClient } from "./bills-client"
 
@@ -29,7 +30,7 @@ export default async function PurchaseBillsPage({
 
   const where = {
     companyId: ctx.company.id,
-    ...(status      ? { status: status as any }                    : {}),
+    ...(status      ? { status: status as DocumentStatus }           : {}),
     ...(vendorId    ? { vendorId }                                 : {}),
     ...(isDebitNote ? { isDebitNote: isDebitNote === "true" }      : {}),
   }
@@ -71,7 +72,7 @@ export default async function PurchaseBillsPage({
       <div className="flex-1 overflow-auto p-6">
         <BillsClient
           orgSlug={orgSlug}
-          bills={bills as any}
+          bills={bills.map((b) => ({ ...b, totalAmount: b.totalAmount?.toString() ?? "0", amountDue: b.amountDue?.toString() ?? "0", billDate: b.billDate instanceof Date ? b.billDate.toISOString() : b.billDate, dueDate: b.dueDate instanceof Date ? b.dueDate.toISOString() : b.dueDate }))}
           page={page}
           pages={Math.ceil(total / limit)}
           total={total}

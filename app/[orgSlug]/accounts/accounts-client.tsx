@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, ChevronDown, MoreHorizontal, Pencil, Trash2, ToggleLeft } from "lucide-react"
@@ -119,8 +119,17 @@ export function AccountsClient({
     router.refresh()
   }
 
-  // Group visible rows by type for section headers
-  let lastType = ""
+  const sectionStarts = useMemo(() => {
+    const starts = new Set<string>()
+    let prevType = ""
+    for (const row of visible) {
+      if (row.depth === 0 && row.type !== prevType) {
+        starts.add(row.id)
+        prevType = row.type
+      }
+    }
+    return starts
+  }, [visible])
 
   return (
     <>
@@ -146,8 +155,7 @@ export function AccountsClient({
         )}
 
         {visible.map((row) => {
-          const showSection = row.depth === 0 && row.type !== lastType
-          if (showSection) lastType = row.type
+          const showSection = sectionStarts.has(row.id)
           const hasChildren = row._count.children > 0
           const isOpen      = expanded.has(row.id)
 

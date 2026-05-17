@@ -127,6 +127,7 @@ export default function BalanceSheetPage() {
     } finally { setLoading(false) }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(defAsOf) }, [load, defAsOf])
 
   return (

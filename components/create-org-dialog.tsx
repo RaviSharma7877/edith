@@ -90,9 +90,9 @@ const schema = z.object({
   postalCode:   z.string().max(20).optional().or(z.literal("")),
   
   // Step 4: Accounting & Team
-  fiscalYearStart: z.string().default("4"),
-  taxMode:         z.string().default("GST"),
-  coaTemplate:     z.string().default("STANDARD_INDIA"),
+  fiscalYearStart: z.string(),
+  taxMode:         z.string(),
+  coaTemplate:     z.string(),
   inviteEmails:    z.string().optional().or(z.literal("")),
 })
 

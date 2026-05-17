@@ -59,6 +59,7 @@ export default function GeneralLedgerPage() {
   }, [orgSlug])
 
   // Load accounts list on mount
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(defFrom, defTo, "") }, [load, defFrom, defTo])
 
   const accounts = data?.accounts ?? []

@@ -42,7 +42,7 @@ export default async function TaxReturnPage({
       <div className="flex-1 overflow-auto p-6">
         <TaxReturnDetail
           orgSlug={orgSlug}
-          taxReturn={taxReturn as any}
+          taxReturn={taxReturn as unknown as { id: string; type: string; period: string; status: string; filedAt: string | null; filedById: string | null; ackNumber: string | null; data: Record<string, unknown>; createdAt: string; updatedAt: string }}
         />
       </div>
     </div>

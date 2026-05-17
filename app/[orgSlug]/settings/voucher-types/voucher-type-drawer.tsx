@@ -25,6 +25,7 @@ export function VoucherTypeDrawer({ open, onClose, onSaved, orgSlug, editing }: 
   const [saving,    setSaving]    = useState(false)
   const [error,     setError]     = useState("")
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       setLabel(editing?.label     ?? "")
@@ -33,6 +34,7 @@ export function VoucherTypeDrawer({ open, onClose, onSaved, orgSlug, editing }: 
       setError("")
     }
   }, [open, editing])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

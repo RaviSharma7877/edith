@@ -222,7 +222,7 @@ export function VoucherTypesClient({ orgSlug, orgName, orgs, userName, userEmail
                 {configs.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      No voucher types yet. Click "New type" to add one.
+                      No voucher types yet. Click &quot;New type&quot; to add one.
                     </td>
                   </tr>
                 )}

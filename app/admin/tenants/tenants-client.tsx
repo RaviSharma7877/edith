@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, useMemo } from "react"
 import { Search, Building2, ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,9 +51,9 @@ export function TenantsClient({ workspaces }: { workspaces: Workspace[] }) {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3">
-        <a href="/admin" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/admin" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-3.5" /> Admin
-        </a>
+        </Link>
         <span className="text-muted-foreground">/</span>
         <span className="text-sm font-medium">All tenants</span>
       </div>

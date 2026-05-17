@@ -30,7 +30,7 @@ export default async function TaxReturnsPage({
         <h1 className="text-lg font-semibold text-[#37322F]">Tax Returns</h1>
       </header>
       <div className="flex-1 overflow-auto p-6">
-        <TaxReturnsClient orgSlug={orgSlug} initialReturns={returns as any} />
+        <TaxReturnsClient orgSlug={orgSlug} initialReturns={returns as unknown as { id: string; type: string; period: string; status: string; filedAt: string | null; ackNumber: string | null; createdAt: string }[]} />
       </div>
     </div>
   )

@@ -57,12 +57,13 @@ export async function GET(
     if (totalTax === 0) { nilExemptTaxable += taxable; continue }
     if (isInterstate) outIgst += totalTax
     else { outCgst += totalTax / 2; outSgst += totalTax / 2 }
-    const lCess = inv.lines.reduce((s, l) => s + ((l as any).cessRate ? Number((l as any).cessRate) / 100 * Number(l.lineTotal) : 0), 0)
+    const lCess = inv.lines.reduce((s, l) => s + (l.cessRate ? Number(l.cessRate) / 100 * Number(l.lineTotal) : 0), 0)
     outCess += lCess
   }
 
   // ── 4. Eligible ITC ──────────────────────────────────────────────────────
-  let itcCgst = 0, itcSgst = 0, itcIgst = 0, itcCess = 0
+  let itcCgst = 0, itcSgst = 0, itcIgst = 0
+  const itcCess = 0
 
   for (const bill of purchaseBills) {
     const totalTax = Number(bill.taxAmount)

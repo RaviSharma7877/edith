@@ -6,7 +6,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { prisma } from "@/lib/prisma"
-import type { AssetStatus, DepreciationMethod, EmploymentStatus, PayrollRunStatus, POSSessionStatus, TenderType } from "@prisma/client"
+import type { AssetStatus, AttendanceStatus, DepreciationMethod, EmploymentStatus, PayrollRunStatus, POSSessionStatus, TenderType } from "@prisma/client"
 
 async function context(orgSlug: string) {
   const session = await getServerSession(authOptions)
@@ -379,4 +379,132 @@ export async function deletePOSTransaction(orgSlug: string, id: string) {
   await prisma.pOSTransaction.update({ where: { id, companyId: ctx.company.id }, data: { isVoided: true } })
   revalidatePath(`/${orgSlug}/pos`)
   redirect(`/${orgSlug}/pos`)
+}
+
+// ── Attendance ────────────────────────────────────────────────────────────────
+
+export async function createAttendance(orgSlug: string, formData: FormData) {
+  const ctx = await context(orgSlug)
+  const employeeId = text(formData, "employeeId")
+  const dateVal = date(formData, "date")
+  if (!employeeId || !dateVal) throw new Error("Employee and date are required.")
+  await prisma.attendance.create({
+    data: {
+      companyId: ctx.company.id,
+      employeeId,
+      date: dateVal,
+      status: (text(formData, "status") ?? "PRESENT") as AttendanceStatus,
+      hoursWorked: decimal(formData, "hoursWorked"),
+      notes: text(formData, "notes"),
+    },
+  })
+  revalidatePath(`/${orgSlug}/payroll/attendance`)
+  redirect(`/${orgSlug}/payroll/attendance`)
+}
+
+export async function updateAttendance(orgSlug: string, id: string, formData: FormData) {
+  const ctx = await context(orgSlug)
+  const employeeId = text(formData, "employeeId")
+  const dateVal = date(formData, "date")
+  if (!employeeId || !dateVal) throw new Error("Employee and date are required.")
+  await prisma.attendance.update({
+    where: { id, companyId: ctx.company.id },
+    data: {
+      employeeId,
+      date: dateVal,
+      status: (text(formData, "status") ?? "PRESENT") as AttendanceStatus,
+      hoursWorked: decimal(formData, "hoursWorked"),
+      notes: text(formData, "notes"),
+    },
+  })
+  revalidatePath(`/${orgSlug}/payroll/attendance`)
+  redirect(`/${orgSlug}/payroll/attendance`)
+}
+
+export async function deleteAttendance(orgSlug: string, id: string) {
+  const ctx = await context(orgSlug)
+  await prisma.attendance.delete({ where: { id, companyId: ctx.company.id } })
+  revalidatePath(`/${orgSlug}/payroll/attendance`)
+  redirect(`/${orgSlug}/payroll/attendance`)
+}
+
+// ── Payslip Lines ─────────────────────────────────────────────────────────────
+
+export async function createPayslipLine(orgSlug: string, runId: string, formData: FormData) {
+  const ctx = await context(orgSlug)
+  const employeeId = text(formData, "employeeId")
+  const component = text(formData, "component")
+  const amount = decimal(formData, "amount")
+  if (!employeeId || !component || !amount) throw new Error("Employee, component and amount are required.")
+  const run = await prisma.payrollRun.findFirst({ where: { id: runId, companyId: ctx.company.id } })
+  if (!run) throw new Error("Payroll run not found.")
+  await prisma.payslipLine.create({
+    data: {
+      payrollRunId: runId,
+      employeeId,
+      component,
+      type: text(formData, "type") ?? "earning",
+      amount,
+      taxable: bool(formData, "taxable"),
+    },
+  })
+  revalidatePath(`/${orgSlug}/payroll/payslips/${runId}`)
+  redirect(`/${orgSlug}/payroll/payslips/${runId}`)
+}
+
+export async function deletePayslipLine(orgSlug: string, runId: string, id: string) {
+  await context(orgSlug)
+  await prisma.payslipLine.delete({ where: { id } })
+  revalidatePath(`/${orgSlug}/payroll/payslips/${runId}`)
+  redirect(`/${orgSlug}/payroll/payslips/${runId}`)
+}
+
+// ── PF Register ───────────────────────────────────────────────────────────────
+
+export async function createPFEntry(orgSlug: string, runId: string, formData: FormData) {
+  const ctx = await context(orgSlug)
+  const employeeId = text(formData, "employeeId")
+  const wageBase = decimal(formData, "wageBase")
+  const employeePfAmount = decimal(formData, "employeePfAmount")
+  const employerPfAmount = decimal(formData, "employerPfAmount")
+  if (!employeeId || !wageBase || !employeePfAmount || !employerPfAmount) throw new Error("Employee and all PF amounts are required.")
+  const run = await prisma.payrollRun.findFirst({ where: { id: runId, companyId: ctx.company.id } })
+  if (!run) throw new Error("Payroll run not found.")
+  await prisma.pFRegister.create({
+    data: { companyId: ctx.company.id, payrollRunId: runId, employeeId, wageBase, employeePfAmount, employerPfAmount },
+  })
+  revalidatePath(`/${orgSlug}/payroll/statutory/pf/${runId}`)
+  redirect(`/${orgSlug}/payroll/statutory/pf/${runId}`)
+}
+
+export async function deletePFEntry(orgSlug: string, runId: string, id: string) {
+  await context(orgSlug)
+  await prisma.pFRegister.delete({ where: { id } })
+  revalidatePath(`/${orgSlug}/payroll/statutory/pf/${runId}`)
+  redirect(`/${orgSlug}/payroll/statutory/pf/${runId}`)
+}
+
+// ── ESI Register ──────────────────────────────────────────────────────────────
+
+export async function createESIEntry(orgSlug: string, runId: string, formData: FormData) {
+  const ctx = await context(orgSlug)
+  const employeeId = text(formData, "employeeId")
+  const wageBase = decimal(formData, "wageBase")
+  const employeeEsiAmount = decimal(formData, "employeeEsiAmount")
+  const employerEsiAmount = decimal(formData, "employerEsiAmount")
+  if (!employeeId || !wageBase || !employeeEsiAmount || !employerEsiAmount) throw new Error("Employee and all ESI amounts are required.")
+  const run = await prisma.payrollRun.findFirst({ where: { id: runId, companyId: ctx.company.id } })
+  if (!run) throw new Error("Payroll run not found.")
+  await prisma.eSIRegister.create({
+    data: { companyId: ctx.company.id, payrollRunId: runId, employeeId, wageBase, employeeEsiAmount, employerEsiAmount },
+  })
+  revalidatePath(`/${orgSlug}/payroll/statutory/esi/${runId}`)
+  redirect(`/${orgSlug}/payroll/statutory/esi/${runId}`)
+}
+
+export async function deleteESIEntry(orgSlug: string, runId: string, id: string) {
+  await context(orgSlug)
+  await prisma.eSIRegister.delete({ where: { id } })
+  revalidatePath(`/${orgSlug}/payroll/statutory/esi/${runId}`)
+  redirect(`/${orgSlug}/payroll/statutory/esi/${runId}`)
 }

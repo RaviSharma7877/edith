@@ -59,10 +59,11 @@ export async function PATCH(
 
   if (lines && Array.isArray(lines)) {
     let subtotal = 0, taxAmount = 0
-    const lineData = lines.map((l: any, idx: number) => {
-      const qty  = parseFloat(l.quantity  ?? "1") || 0
-      const rate = parseFloat(l.unitPrice ?? "0") || 0
-      const taxR = parseFloat(l.taxRate   ?? "0") || 0
+    type LineInput = { quantity?: string | number; unitPrice?: string | number; taxRate?: string | number; description?: string; hsnCode?: string | null; unit?: string | null; accountId?: string | null }
+    const lineData = (lines as LineInput[]).map((l, idx: number) => {
+      const qty  = parseFloat(String(l.quantity  ?? "1")) || 0
+      const rate = parseFloat(String(l.unitPrice ?? "0")) || 0
+      const taxR = parseFloat(String(l.taxRate   ?? "0")) || 0
       const base = qty * rate
       const tax  = base * (taxR / 100)
       subtotal  += base

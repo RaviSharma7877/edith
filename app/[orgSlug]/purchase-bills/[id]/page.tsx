@@ -6,9 +6,9 @@ import { prisma } from "@/lib/prisma"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { BillActions } from "./bill-actions"
 
-function fmt(v: any) {
+function fmt(v: { toNumber?: () => number } | string | number | null | undefined) {
   if (v === null || v === undefined) return "—"
-  const n = typeof v === "object" && v && "toNumber" in v ? (v as any).toNumber() : Number(v)
+  const n = typeof v === "object" && v && "toNumber" in v ? (v as { toNumber: () => number }).toNumber() : Number(v)
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function fmtDate(d: Date | string | null | undefined) {

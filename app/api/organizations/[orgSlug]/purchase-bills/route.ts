@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { DocumentStatus } from "@prisma/client"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { NextResponse } from "next/server"
 
@@ -33,7 +34,7 @@ export async function GET(
 
   const where = {
     companyId: ctx.company.id,
-    ...(status      ? { status: status as any }                                    : {}),
+    ...(status      ? { status: status as DocumentStatus }                        : {}),
     ...(vendorId    ? { vendorId }                                                 : {}),
     ...(isDebitNote ? { isDebitNote: isDebitNote === "true" }                      : {}),
   }
@@ -109,6 +110,8 @@ export async function POST(
 
   const billNumber = await nextBillNumber(ctx.company.id, isDebitNote)
 
+  type LineInput = { quantity?: string | number; unitPrice?: string | number; taxRate?: string | number; description?: string; hsnCode?: string | null; unit?: string | null; accountId?: string | null }
+
   const bill = await prisma.purchaseBill.create({
     data: {
       companyId:    ctx.company.id,
@@ -129,10 +132,10 @@ export async function POST(
       debitNoteOfId: debitNoteOfId ?? null,
       createdById:  ctx.userId,
       lines: {
-        create: lines.map((l: any, idx: number) => {
-          const qty  = parseFloat(l.quantity  ?? "1") || 0
-          const rate = parseFloat(l.unitPrice ?? "0") || 0
-          const taxR = parseFloat(l.taxRate   ?? "0") || 0
+        create: (lines as LineInput[]).map((l, idx: number) => {
+          const qty  = parseFloat(String(l.quantity  ?? "1")) || 0
+          const rate = parseFloat(String(l.unitPrice ?? "0")) || 0
+          const taxR = parseFloat(String(l.taxRate   ?? "0")) || 0
           const base = qty * rate
           const tax  = base * (taxR / 100)
           return {

@@ -194,7 +194,7 @@ export function AccountEditClient({
                 <div key={field} className="flex items-center gap-2">
                   <Checkbox
                     id={field}
-                    checked={(form as any)[field]}
+                    checked={(form as Record<string, unknown>)[field] as boolean}
                     onCheckedChange={(v) => set(field, v)}
                     disabled={account.isSystemAccount && field === "isActive"}
                   />

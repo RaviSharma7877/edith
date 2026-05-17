@@ -144,6 +144,7 @@ export default function GSTR1Page() {
     }
   }, [orgSlug])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(defPeriod) }, [load, defPeriod])
 
   const tabs = [

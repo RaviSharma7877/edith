@@ -37,9 +37,9 @@ export default async function VendorDetailPage({
   function fmtDate(d: Date | string) {
     return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
   }
-  function fmt(v: any) {
+  function fmt(v: { toNumber: () => number } | number | string | null | undefined) {
     if (!v) return "—"
-    const n = typeof v === "object" && v.toNumber ? v.toNumber() : Number(v)
+    const n = typeof v === "object" && v && "toNumber" in v ? (v as { toNumber: () => number }).toNumber() : Number(v)
     return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
 
@@ -71,7 +71,7 @@ export default async function VendorDetailPage({
 
       <div className="flex-1 overflow-auto p-6">
         <div className="w-full min-w-0 space-y-6">
-          <VendorEditClient orgSlug={orgSlug} vendor={vendor as any} />
+          <VendorEditClient orgSlug={orgSlug} vendor={vendor as { id: string; name: string; code: string | null; email: string | null; phone: string | null; gstin: string | null; pan: string | null; paymentTerms: number | null; billingAddress: unknown; isActive: boolean }} />
 
           {vendor.purchaseBills.length > 0 && (
             <div className="rounded-lg border border-[rgba(55,50,47,0.10)] bg-white overflow-hidden">

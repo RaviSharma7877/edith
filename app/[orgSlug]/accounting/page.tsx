@@ -84,8 +84,8 @@ export default async function AccountingPage({ params }: Props) {
       userEmail={session.user.email}
       company={company ? { id: company.id, name: company.name, currency: company.currency, taxMode: company.taxMode } : null}
       stats={{ accountCount, openPeriods, draftJournals }}
-      recentJournals={recentJournals}
-      recentActivity={recentActivity}
+      recentJournals={recentJournals.map((j) => ({ ...j, totalDebit: j.totalDebit.toString() }))}
+      recentActivity={recentActivity.map((a) => ({ ...a, resourceType: a.resourceType ?? "" }))}
     />
   )
 }

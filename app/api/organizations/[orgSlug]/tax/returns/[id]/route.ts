@@ -1,8 +1,10 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@prisma/client"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { NextResponse } from "next/server"
+import { PeriodStatus } from "@prisma/client"
 
 export async function GET(
   _req: Request,
@@ -57,7 +59,7 @@ export async function POST(
     },
   })
 
-  const ops = [
+  const ops: Prisma.PrismaPromise<unknown>[] = [
     prisma.taxReturn.update({
       where: { id },
       data:  { status: "filed", filedAt: now, filedById: ctx.userId, ackNumber },
@@ -69,8 +71,8 @@ export async function POST(
     ops.push(
       prisma.accountingPeriod.update({
         where: { id: accountingPeriod.id },
-        data:  { status: "CLOSED" as any },
-      }) as any,
+        data:  { status: PeriodStatus.CLOSED },
+      }),
     )
   }
 

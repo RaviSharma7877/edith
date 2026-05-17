@@ -72,10 +72,11 @@ export async function PATCH(
       return NextResponse.json({ error: "At least 2 lines are required." }, { status: 400 })
     }
 
-    const totalDebit  = lines.filter((l: any) => l.direction === "DEBIT")
-                             .reduce((s: number, l: any) => s + Number(l.amount), 0)
-    const totalCredit = lines.filter((l: any) => l.direction === "CREDIT")
-                             .reduce((s: number, l: any) => s + Number(l.amount), 0)
+    type LineInput = { direction: string; amount: number | string; accountId: string; description?: string; costCenterId?: string; projectId?: string; branchId?: string; taxCodeId?: string; taxRate?: number | null; taxAmount?: number | null }
+    const totalDebit  = (lines as LineInput[]).filter((l) => l.direction === "DEBIT")
+                             .reduce((s: number, l) => s + Number(l.amount), 0)
+    const totalCredit = (lines as LineInput[]).filter((l) => l.direction === "CREDIT")
+                             .reduce((s: number, l) => s + Number(l.amount), 0)
 
     headerData.totalDebit  = String(totalDebit)
     headerData.totalCredit = String(totalCredit)
@@ -83,7 +84,7 @@ export async function PATCH(
     await prisma.$transaction([
       prisma.journalLine.deleteMany({ where: { journalEntryId: id } }),
       prisma.journalEntry.update({ where: { id }, data: headerData }),
-      ...lines.map((l: any) =>
+      ...(lines as LineInput[]).map((l) =>
         prisma.journalLine.create({
           data: {
             journalEntryId: id,

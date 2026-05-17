@@ -48,7 +48,7 @@ export default async function AccountsPage({
         </Link>
       </header>
       <div className="flex-1 overflow-auto p-6">
-        <AccountsClient orgSlug={orgSlug} accounts={accounts as any} />
+        <AccountsClient orgSlug={orgSlug} accounts={accounts.map((a) => ({ ...a, openingBalance: a.openingBalance?.toString() ?? null }))} />
       </div>
     </div>
   )

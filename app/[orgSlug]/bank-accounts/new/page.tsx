@@ -24,7 +24,7 @@ export default function NewBankAccountPage() {
     if (loadedAccts) return
     const res  = await fetch(`/api/organizations/${orgSlug}/accounts?subtype=BANK,CASH&isPosting=true`)
     const data = await res.json()
-    setAccounts((data.accounts ?? data).filter((a: any) => ["BANK", "CASH"].includes(a.subtype)))
+    setAccounts((data.accounts ?? data).filter((a: { id: string; name: string; code: string; subtype: string }) => ["BANK", "CASH"].includes(a.subtype)))
     setLoadedAccts(true)
   }
 

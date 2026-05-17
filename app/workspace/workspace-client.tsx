@@ -15,6 +15,7 @@ export function WorkspaceClient({ email, name }: WorkspaceClientProps) {
   const [showWelcome, setShowWelcome] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setMounted(true)
     // Show welcome screen if this is the user's first login
@@ -22,6 +23,7 @@ export function WorkspaceClient({ email, name }: WorkspaceClientProps) {
       setShowWelcome(true)
     }
   }, [session?.user?.showWelcomeScreen])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleWelcomeDone = useCallback(async () => {
     setShowWelcome(false)

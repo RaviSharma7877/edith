@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveCompany } from "@/lib/api/resolve-company"
+import { closePeriod } from "@/lib/ledger/ledger-service"
 import { NextResponse } from "next/server"
 
 // ── Blocker checks ─────────────────────────────────────────────────────────────
@@ -156,15 +157,21 @@ export async function PATCH(
         blockers,
       }, { status: 422 })
 
-    const updated = await prisma.accountingPeriod.update({
-      where: { id: periodId },
-      data:  {
-        status:    "CLOSED",
-        isLocked:  true,
-        closedAt:  now,
-        closedById: ctx.userId,
-      },
-    })
+    // Generate double-entry closing journal (revenue/expense → retained earnings)
+    // then mark the period CLOSED.  closePeriod handles the period update internally.
+    let closingResult: Awaited<ReturnType<typeof closePeriod>>
+    try {
+      closingResult = await closePeriod({
+        companyId:   ctx.company.id,
+        workspaceId: ctx.workspaceId,
+        periodId,
+        userId:      ctx.userId,
+        currency:    ctx.company.currency,
+      })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error"
+      return NextResponse.json({ error: message }, { status: 422 })
+    }
 
     await prisma.auditLog.create({
       data: {
@@ -174,10 +181,14 @@ export async function PATCH(
         resourceType: "accounting_period",
         resourceId:   periodId,
         resourceName: period.name,
+        description:  closingResult.closingEntry
+          ? `Closing journal ${closingResult.closingEntry.voucherNumber} generated. Net income: ${closingResult.netIncome.toFixed(2)}`
+          : "Period closed with no revenue/expense movements.",
       },
     })
 
-    return NextResponse.json(updated)
+    const updated = await prisma.accountingPeriod.findUnique({ where: { id: periodId } })
+    return NextResponse.json({ period: updated, closingEntry: closingResult.closingEntry, netIncome: closingResult.netIncome })
   }
 
   if (action === "reopen") {

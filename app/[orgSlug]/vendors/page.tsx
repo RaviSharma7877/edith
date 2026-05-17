@@ -67,7 +67,7 @@ export default async function VendorsPage({
       <div className="flex-1 overflow-auto p-6">
         <VendorsClient
           orgSlug={orgSlug}
-          vendors={vendors as any}
+          vendors={vendors.map((v) => ({ ...v, createdAt: v.createdAt.toISOString() }))}
           page={page}
           pages={Math.ceil(total / limit)}
           total={total}

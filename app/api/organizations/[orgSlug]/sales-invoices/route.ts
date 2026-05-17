@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { DocumentStatus } from "@prisma/client"
 import { resolveCompany } from "@/lib/api/resolve-company"
 import { NextResponse } from "next/server"
 
@@ -33,7 +34,7 @@ export async function GET(
 
   const where = {
     companyId: ctx.company.id,
-    ...(status       ? { status: status as any }          : {}),
+    ...(status       ? { status: status as DocumentStatus } : {}),
     ...(customerId   ? { customerId }                      : {}),
     ...(isCreditNote !== null && isCreditNote !== ""
       ? { isCreditNote: isCreditNote === "true" } : {}),
@@ -70,7 +71,12 @@ export async function POST(
   const ctx = await resolveCompany(orgSlug, session.user.email)
   if (!ctx) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const body = await req.json()
+  const body = await req.json() as {
+    customerId?: string; invoiceDate?: string; dueDate?: string
+    lines?: Array<{ quantity?: string; unitPrice?: string; discountPct?: string; taxRate?: string; description?: string; hsnCode?: string; unit?: string; taxAmount?: string | number; accountId?: string }>
+    notes?: string; terms?: string; placeOfSupply?: string
+    isCreditNote?: boolean; creditNoteOfId?: string
+  }
   const {
     customerId, invoiceDate, dueDate, lines = [], notes, terms,
     placeOfSupply, isCreditNote = false, creditNoteOfId,
@@ -122,7 +128,7 @@ export async function POST(
       creditNoteOfId: creditNoteOfId ?? null,
       createdById:  ctx.userId,
       lines: {
-        create: lines.map((l: any, idx: number) => {
+        create: lines.map((l: { quantity?: string; unitPrice?: string; discountPct?: string; taxRate?: string; description?: string; hsnCode?: string; unit?: string; taxAmount?: string | number; accountId?: string }, idx: number) => {
           const qty  = parseFloat(l.quantity  ?? "1") || 0
           const rate = parseFloat(l.unitPrice ?? "0") || 0
           const disc = parseFloat(l.discountPct ?? "0") || 0

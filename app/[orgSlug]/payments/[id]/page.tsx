@@ -10,7 +10,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function fmt(v: { toNumber?: () => number } | string | number | null | undefined) {
   if (v === null || v === undefined) return "—"
-  const n = typeof v === "object" && v && "toNumber" in v ? (v as any).toNumber() : Number(v)
+  const n = typeof v === "object" && v && "toNumber" in v ? (v as { toNumber: () => number }).toNumber() : Number(v)
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function fmtDate(d: Date | string | null | undefined) {
@@ -227,9 +227,25 @@ export default async function PaymentDetailPage({
             paymentId={id}
             paymentType={payment.type}
             paymentStatus={payment.status}
-            existingAllocations={payment.allocations as any}
-            openInvoices={openInvoices as any}
-            openBills={openBills as any}
+            existingAllocations={payment.allocations.map((a) => ({
+              ...a,
+              amount:         a.amount?.toString() ?? "0",
+              discountAmount: a.discountAmount?.toString() ?? "0",
+              invoice: a.invoice ? { ...a.invoice, totalAmount: a.invoice.totalAmount?.toString() ?? "0" } : null,
+              bill:    a.bill    ? { ...a.bill,    totalAmount: a.bill.totalAmount?.toString()    ?? "0" } : null,
+            }))}
+            openInvoices={openInvoices.map((inv) => ({
+              ...inv,
+              invoiceDate: inv.invoiceDate instanceof Date ? inv.invoiceDate.toISOString() : inv.invoiceDate,
+              totalAmount: inv.totalAmount?.toString() ?? "0",
+              amountDue:   inv.amountDue?.toString()   ?? "0",
+            }))}
+            openBills={openBills.map((bill) => ({
+              ...bill,
+              billDate:    bill.billDate instanceof Date ? bill.billDate.toISOString() : bill.billDate,
+              totalAmount: bill.totalAmount?.toString() ?? "0",
+              amountDue:   bill.amountDue?.toString()   ?? "0",
+            }))}
           />
 
         </div>
