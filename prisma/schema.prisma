@@ -127,6 +127,14 @@ enum PayrollRunStatus {
   CANCELLED
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  ON_LEAVE
+  HOLIDAY
+}
+
 enum AssetStatus {
   ACTIVE
   FULLY_DEPRECIATED
@@ -998,6 +1006,7 @@ model Company {
   gstrReconciliationRuns   GSTRReconciliationRun[]
   employees                Employee[]
   payrollRuns              PayrollRun[]
+  attendance               Attendance[]
   fixedAssets              FixedAsset[]
   posTills                 POSTill[]
   posSessions              POSSession[]
@@ -1011,6 +1020,7 @@ model Company {
   customFieldDefinitions   CustomFieldDefinition[]
   customFieldValues        CustomFieldValue[]
   bulkOperations           BulkOperation[]
+  voucherTypeConfigs       VoucherTypeConfig[]
 
   @@map("companies")
 }
@@ -1213,6 +1223,9 @@ model JournalEntry {
   sourceType String? // "invoice" | "bill" | "payment"
   sourceId   String?
 
+  voucherTypeConfigId  String?
+  voucherTypeConfig    VoucherTypeConfig? @relation(fields: [voucherTypeConfigId], references: [id])
+
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -1227,6 +1240,7 @@ model JournalEntry {
   @@index([companyId, date])
   @@index([companyId, status])
   @@index([voucherType])
+  @@index([voucherTypeConfigId])
   @@map("journal_entries")
 }
 
@@ -1263,6 +1277,30 @@ model JournalLine {
   @@index([journalEntryId])
   @@index([accountId])
   @@map("journal_lines")
+}
+
+model VoucherTypeConfig {
+  id              String      @id @default(cuid())
+  companyId       String?
+  workspaceId     String?
+  key             String
+  label           String
+  prefix          String
+  isSystem        Boolean     @default(false)
+  isActive        Boolean     @default(true)
+  sortOrder       Int         @default(100)
+  baseVoucherType VoucherType
+  formConfig      Json
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  company        Company?       @relation(fields: [companyId], references: [id])
+  journalEntries JournalEntry[]
+
+  @@unique([companyId, key])
+  @@index([companyId, isActive, sortOrder])
+  @@map("voucher_type_configs")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3393,6 +3431,7 @@ model Employee {
   payslipLines PayslipLine[]
   pfRegisters  PFRegister[]
   esiRegisters ESIRegister[]
+  attendance   Attendance[]
 
   @@unique([companyId, employeeCode])
   @@index([companyId, status])
@@ -3477,6 +3516,25 @@ model ESIRegister {
 
   @@index([companyId, payrollRunId])
   @@map("esi_registers")
+}
+
+model Attendance {
+  id          String           @id @default(cuid())
+  companyId   String
+  employeeId  String
+  date        DateTime         @db.Date
+  status      AttendanceStatus @default(PRESENT)
+  hoursWorked Decimal?         @db.Decimal(5, 2)
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([companyId, date])
+  @@map("attendance")
 }
 
 model FixedAsset {
