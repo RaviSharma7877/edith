@@ -1300,6 +1300,7 @@ model VoucherTypeConfig {
 
   @@unique([companyId, key])
   @@index([companyId, isActive, sortOrder])
+  @@index([workspaceId])
   @@map("voucher_type_configs")
 }
 

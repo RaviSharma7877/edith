@@ -44,3 +44,7 @@ CREATE INDEX "voucher_type_configs_companyId_isActive_sortOrder_idx"
 -- CreateIndex
 CREATE INDEX "journal_entries_voucherTypeConfigId_idx"
     ON "journal_entries"("voucherTypeConfigId");
+
+-- CreateIndex
+CREATE INDEX "voucher_type_configs_workspaceId_idx"
+    ON "voucher_type_configs"("workspaceId");
