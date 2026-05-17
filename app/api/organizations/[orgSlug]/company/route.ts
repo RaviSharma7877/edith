@@ -17,7 +17,7 @@ async function resolveCompany(orgSlug: string, userEmail: string) {
     },
   })
 
-  const member = user?.workspaceMembers.find((m) => m.workspace.slug === orgSlug)
+  const member = user?.workspaceMembers.find((m: { workspace: { slug: string; id: string } }) => m.workspace.slug === orgSlug)
   if (!member) return null
 
   const company = await prisma.company.findFirst({

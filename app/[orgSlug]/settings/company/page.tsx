@@ -24,14 +24,14 @@ export default async function CompanySettingsPage({ params }: Props) {
     },
   })
 
-  const membership = user?.workspaceMembers.find((m) => m.workspace.slug === orgSlug)
+  const membership = user?.workspaceMembers.find((m: { workspace: { slug: string; id: string } }) => m.workspace.slug === orgSlug)
   if (!membership) redirect("/onboarding")
 
   const company = await prisma.company.findFirst({
     where: { workspaceId: membership.workspace.id, isDefault: true, deletedAt: null },
   })
 
-  const orgs = (user?.workspaceMembers ?? []).map((m) => ({
+  const orgs = (user?.workspaceMembers ?? []).map((m: { workspace: { slug: string; name: string } }) => ({
     slug: m.workspace.slug,
     name: m.workspace.name,
   }))

@@ -29,12 +29,12 @@ export default async function DashboardPage({ params, searchParams }: Props) {
   })
 
   const currentMembership = user?.workspaceMembers.find(
-    (m) => m.workspace.slug === orgSlug,
+    (m: { workspace: { slug: string } }) => m.workspace.slug === orgSlug,
   )
 
   if (!currentMembership) redirect("/onboarding")
 
-  const orgs = (user?.workspaceMembers ?? []).map((m) => ({
+  const orgs = (user?.workspaceMembers ?? []).map((m: { workspace: { slug: string; name: string } }) => ({
     slug: m.workspace.slug,
     name: m.workspace.name,
   }))

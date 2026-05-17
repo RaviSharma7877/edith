@@ -27,10 +27,10 @@ export default async function OrgLayout({
     },
   })
 
-  const member = user?.workspaceMembers.find((m) => m.workspace.slug === orgSlug)
+  const member = user?.workspaceMembers.find((m: { workspace: { slug: string; id: string } }) => m.workspace.slug === orgSlug)
   if (!member) redirect("/workspace")
 
-  const orgs = user!.workspaceMembers.map((m) => ({
+  const orgs = user!.workspaceMembers.map((m: { workspace: { slug: string; name: string } }) => ({
     slug: m.workspace.slug,
     name: m.workspace.name,
   }))

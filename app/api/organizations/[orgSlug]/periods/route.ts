@@ -25,7 +25,7 @@ export async function GET(
     },
   })
 
-  const member = user?.workspaceMembers.find((m) => m.workspace.slug === orgSlug)
+  const member = user?.workspaceMembers.find((m: { workspace: { slug: string; id: string } }) => m.workspace.slug === orgSlug)
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const company = await prisma.company.findFirst({
@@ -79,7 +79,7 @@ export async function PATCH(
     },
   })
 
-  const member = user?.workspaceMembers.find((m) => m.workspace.slug === orgSlug)
+  const member = user?.workspaceMembers.find((m: { workspace: { slug: string; id: string } }) => m.workspace.slug === orgSlug)
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const period = await prisma.accountingPeriod.findUnique({

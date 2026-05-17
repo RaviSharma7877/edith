@@ -68,7 +68,7 @@ export default async function AccountingPage({ params }: Props) {
       ])
     : [0, 0, 0, [], []]
 
-  const orgs = (user?.workspaceMembers ?? []).map((m) => ({
+  const orgs = (user?.workspaceMembers ?? []).map((m: { workspace: { slug: string; name: string } }) => ({
     slug: m.workspace.slug,
     name: m.workspace.name,
   }))
