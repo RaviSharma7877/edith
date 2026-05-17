@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { seedCompanyVoucherTypes } from "@/lib/ledger/seed-voucher-types"
 
 function toSlug(name: string): string {
   return name
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
   const { fyStart, fyEnd, fyName, periods } = buildFiscalYear(fyStartMonth)
 
   // ── Create workspace, company, fiscal year, and periods atomically ─────────
-  const workspace = await prisma.$transaction(async (tx) => {
+  const { ws: workspace, company } = await prisma.$transaction(async (tx) => {
     const ws = await tx.workspace.create({
       data: {
         slug,
@@ -213,8 +214,11 @@ export async function POST(req: Request) {
       },
     })
 
-    return ws
+    return { ws, company }
   })
+
+  // ── Seed system voucher types ──────────────────────────────────────────────
+  await seedCompanyVoucherTypes(company.id, workspace.id)
 
   // ── Send invites (fire and forget — no blocking) ───────────────────────────
   // TODO: integrate with email provider (Resend/SendGrid)
