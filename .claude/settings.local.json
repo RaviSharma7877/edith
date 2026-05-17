@@ -69,7 +69,12 @@
       "Bash(grep -E \"^C:\\\\\\\\\\\\\\\\|set-state-in-effect|no-html-link-for-pages|no-unescaped-entities|no-explicit-any|prefer-const|immutability|purity\")",
       "Bash(grep \"^C:\\\\\\\\\")",
       "Bash(grep -v \"//.*\\\\.\")",
-      "Bash(grep -vE \"\\\\.\\(tsx|ts\\):[0-9]+:\\\\s*\\(//|{|<\\)\")"
+      "Bash(grep -vE \"\\\\.\\(tsx|ts\\):[0-9]+:\\\\s*\\(//|{|<\\)\")",
+      "Bash(node -e \"const lock = require\\('./package-lock.json'\\); const pkgs = lock.packages; const results = []; for \\(const [k, v] of Object.entries\\(pkgs\\)\\) { if \\(v.dependencies && v.dependencies['socket.io-client']\\) { results.push\\(k + ' => socket.io-client@' + v.dependencies['socket.io-client']\\); } } console.log\\(results.join\\('\\\\n'\\)\\);\")",
+      "Bash(node -e \"const lock = require\\('./package-lock.json'\\); const pkgs = lock.packages; const results = []; for \\(const [k, v] of Object.entries\\(pkgs\\)\\) { if \\(v.dependencies && v.dependencies['socket.io']\\) { results.push\\(k + ' => socket.io@' + v.dependencies['socket.io']\\); } } console.log\\(results.join\\('\\\\n'\\) || 'none'\\); const root = pkgs['']; if \\(root && root.dependencies && root.dependencies['socket.io']\\) console.log\\('root => socket.io@' + root.dependencies['socket.io']\\);\")",
+      "Bash(node -e \"const lock = require\\('./package-lock.json'\\); const pkgs = lock.packages; const results = []; for \\(const [k, v] of Object.entries\\(pkgs\\)\\) { if \\(v.dependencies && v.dependencies['tomahawk']\\) { results.push\\(k + ' => tomahawk@' + v.dependencies['tomahawk']\\); } } console.log\\(results.join\\('\\\\n'\\) || 'none'\\); const root = pkgs['']; if \\(root && \\(root.dependencies?.tomahawk || root.devDependencies?.tomahawk\\)\\) console.log\\('root has tomahawk'\\);\")",
+      "Bash(node -e \"const lock = require\\('./package-lock.json'\\); const pkgs = lock.packages; const results = []; for \\(const [k, v] of Object.entries\\(pkgs\\)\\) { if \\(v.dependencies && v.dependencies['dns']\\) { results.push\\(k + ' => dns@' + v.dependencies['dns']\\); } } console.log\\(results.join\\('\\\\n'\\) || 'none'\\); const root = pkgs['']; if \\(root && \\(root.dependencies?.dns || root.devDependencies?.dns\\)\\) console.log\\('root has dns => ' + \\(root.dependencies?.dns || root.devDependencies?.dns\\)\\);\")",
+      "Bash(grep -r \"from ['\\\\\"]dns['\\\\\"]\\\\\\\\|require\\(['\\\\\"]dns['\\\\\"]\" --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" .)"
     ]
   }
 }
