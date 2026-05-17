@@ -22,16 +22,16 @@ export default async function JournalsPage({
   const ctx = await resolveCompany(orgSlug, session.user.email)
   if (!ctx) redirect("/workspace")
 
-  const status      = sp.status      || undefined
-  const voucherType = sp.voucherType || undefined
-  const page        = Math.max(1, parseInt(sp.page ?? "1"))
-  const limit       = 20
+  const status   = sp.status   || undefined
+  const configId = sp.configId || undefined
+  const page     = Math.max(1, parseInt(sp.page ?? "1"))
+  const limit    = 20
 
   const where: Record<string, unknown> = { companyId: ctx.company.id }
-  if (status)      where.status      = status
-  if (voucherType) where.voucherType = voucherType
+  if (status)   where.status              = status
+  if (configId) where.voucherTypeConfigId = configId
 
-  const [entries, total] = await Promise.all([
+  const [entries, total, configs] = await Promise.all([
     prisma.journalEntry.findMany({
       where,
       orderBy: { date: "desc" },
@@ -41,10 +41,16 @@ export default async function JournalsPage({
         id: true, voucherNumber: true, voucherType: true, date: true,
         status: true, description: true, totalDebit: true, totalCredit: true,
         isReversal: true, postedAt: true, createdAt: true,
+        voucherTypeConfig: { select: { label: true } },
         _count: { select: { lines: true } },
       },
     }),
     prisma.journalEntry.count({ where }),
+    prisma.voucherTypeConfig.findMany({
+      where:   { companyId: ctx.company.id, isActive: true, deletedAt: null },
+      orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+      select:  { id: true, label: true },
+    }),
   ])
 
   const pages = Math.ceil(total / limit)
@@ -69,12 +75,21 @@ export default async function JournalsPage({
       <div className="flex-1 overflow-auto p-6">
         <JournalsClient
           orgSlug={orgSlug}
-          entries={entries as any}
+          entries={entries.map(({ voucherTypeConfig, totalDebit, totalCredit, ...e }) => ({
+            ...e,
+            date:        e.date.toISOString(),
+            createdAt:   e.createdAt.toISOString(),
+            postedAt:    e.postedAt?.toISOString() ?? null,
+            totalDebit:  String(totalDebit),
+            totalCredit: String(totalCredit),
+            configLabel: voucherTypeConfig?.label ?? null,
+          }))}
           page={page}
           pages={pages}
           total={total}
           statusFilter={status}
-          voucherTypeFilter={voucherType}
+          configIdFilter={configId}
+          configs={configs}
         />
       </div>
     </div>

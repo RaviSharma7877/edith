@@ -10,8 +10,11 @@ type Entry = {
   id: string; voucherNumber: string; voucherType: string; date: string
   status: string; description: string | null; totalDebit: string; totalCredit: string
   isReversal: boolean; postedAt: string | null; createdAt: string
+  configLabel: string | null
   _count: { lines: number }
 }
+
+type ConfigRef = { id: string; label: string }
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT:            "bg-gray-100 text-gray-700",
@@ -22,11 +25,7 @@ const STATUS_COLORS: Record<string, string> = {
   VOID:             "bg-red-100 text-red-700",
 }
 
-const STATUSES     = ["DRAFT","PENDING_APPROVAL","POSTED","REVERSED","CANCELLED","VOID"]
-const VOUCHER_TYPES = [
-  "JOURNAL_ENTRY","PAYMENT_RECEIPT","PAYMENT_DISBURSEMENT",
-  "SALES_INVOICE","PURCHASE_BILL","CREDIT_NOTE","DEBIT_NOTE","CONTRA","OPENING_BALANCE",
-]
+const STATUSES = ["DRAFT","PENDING_APPROVAL","POSTED","REVERSED","CANCELLED","VOID"]
 
 function fmt(v: string) {
   return Number(v).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -37,7 +36,7 @@ function fmtDate(d: string) {
 
 export function JournalsClient({
   orgSlug, entries, page, pages, total,
-  statusFilter, voucherTypeFilter,
+  statusFilter, configIdFilter, configs,
 }: {
   orgSlug: string
   entries: Entry[]
@@ -45,15 +44,16 @@ export function JournalsClient({
   pages: number
   total: number
   statusFilter?: string
-  voucherTypeFilter?: string
+  configIdFilter?: string
+  configs: ConfigRef[]
 }) {
   const router   = useRouter()
   const pathname = usePathname()
 
   function applyFilter(key: string, value: string | undefined) {
     const params = new URLSearchParams()
-    if (key !== "status"      && statusFilter)       params.set("status",      statusFilter)
-    if (key !== "voucherType" && voucherTypeFilter)  params.set("voucherType", voucherTypeFilter)
+    if (key !== "status"   && statusFilter)   params.set("status",   statusFilter)
+    if (key !== "configId" && configIdFilter) params.set("configId", configIdFilter)
     if (value) params.set(key, value)
     params.set("page", "1")
     router.push(`${pathname}?${params.toString()}`)
@@ -61,8 +61,8 @@ export function JournalsClient({
 
   function goPage(p: number) {
     const params = new URLSearchParams()
-    if (statusFilter)      params.set("status",      statusFilter)
-    if (voucherTypeFilter) params.set("voucherType", voucherTypeFilter)
+    if (statusFilter)   params.set("status",   statusFilter)
+    if (configIdFilter) params.set("configId", configIdFilter)
     params.set("page", String(p))
     router.push(`${pathname}?${params.toString()}`)
   }
@@ -87,16 +87,16 @@ export function JournalsClient({
         </Select>
 
         <Select
-          value={voucherTypeFilter ?? "all"}
-          onValueChange={(v) => applyFilter("voucherType", v === "all" ? undefined : v)}
+          value={configIdFilter ?? "all"}
+          onValueChange={(v) => applyFilter("configId", v === "all" ? undefined : v)}
         >
           <SelectTrigger className="w-52 bg-white">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All types</SelectItem>
-            {VOUCHER_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>
+            {configs.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -135,7 +135,9 @@ export function JournalsClient({
             </span>
             <span className="truncate text-[#605A57]">{entry.description ?? "—"}</span>
             <span className="text-xs text-[#605A57]">{fmtDate(entry.date)}</span>
-            <span className="text-xs text-[#605A57]">{entry.voucherType.replace(/_/g, " ")}</span>
+            <span className="text-xs text-[#605A57]">
+              {entry.configLabel ?? entry.voucherType.replace(/_/g, " ")}
+            </span>
             <span>
               <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${STATUS_COLORS[entry.status] ?? "bg-gray-100 text-gray-700"}`}>
                 {entry.status.replace(/_/g, " ")}
