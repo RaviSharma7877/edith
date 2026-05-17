@@ -3,28 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveCompany } from "@/lib/api/resolve-company"
+import { nextVoucherNumber } from "@/lib/ledger/ledger-service"
 import type { VoucherType, TransactionDirection } from "@prisma/client"
-
-const VOUCHER_PREFIX: Record<VoucherType, string> = {
-  JOURNAL_ENTRY:           "JV",
-  PAYMENT_RECEIPT:         "RV",
-  PAYMENT_DISBURSEMENT:    "PV",
-  SALES_INVOICE:           "SI",
-  PURCHASE_BILL:           "PB",
-  CREDIT_NOTE:             "CN",
-  DEBIT_NOTE:              "DN",
-  CONTRA:                  "CO",
-  OPENING_BALANCE:         "OB",
-  BANK_RECONCILIATION_ADJ: "BA",
-  TAX_ADJUSTMENT:          "TA",
-}
-
-async function nextVoucherNumber(companyId: string, voucherType: VoucherType): Promise<string> {
-  const year = new Date().getFullYear()
-  const prefix = VOUCHER_PREFIX[voucherType]
-  const count = await prisma.journalEntry.count({ where: { companyId, voucherType } })
-  return `${prefix}-${year}-${String(count + 1).padStart(4, "0")}`
-}
 
 // ── GET /api/organizations/[orgSlug]/journals ─────────────────────────────────
 
@@ -39,12 +19,12 @@ export async function GET(
   const ctx = await resolveCompany(orgSlug, session.user.email)
   if (!ctx) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const url    = new URL(req.url)
+  const url         = new URL(req.url)
   const status      = url.searchParams.get("status")      ?? undefined
   const voucherType = url.searchParams.get("voucherType") ?? undefined
-  const page   = Math.max(1, parseInt(url.searchParams.get("page")  ?? "1"))
-  const limit  = Math.min(100, parseInt(url.searchParams.get("limit") ?? "20"))
-  const skip   = (page - 1) * limit
+  const page        = Math.max(1, parseInt(url.searchParams.get("page")  ?? "1"))
+  const limit       = Math.min(100, parseInt(url.searchParams.get("limit") ?? "20"))
+  const skip        = (page - 1) * limit
 
   const where: Record<string, unknown> = { companyId: ctx.company.id }
   if (status)      where.status = status
@@ -86,7 +66,7 @@ export async function POST(
   if (!ctx) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const body = await req.json()
-  const { voucherType, date, description, narration, reference, lines = [] } = body
+  const { voucherType, date, description, narration, reference, lines = [], voucherTypeConfigId } = body
 
   if (!voucherType || !date) {
     return NextResponse.json({ error: "voucherType and date are required." }, { status: 400 })
@@ -110,17 +90,35 @@ export async function POST(
     }
   }
 
-  const totalDebit  = lines.filter((l: any) => l.direction === "DEBIT")
-                           .reduce((s: number, l: any) => s + Number(l.amount), 0)
-  const totalCredit = lines.filter((l: any) => l.direction === "CREDIT")
-                           .reduce((s: number, l: any) => s + Number(l.amount), 0)
+  const totalDebit  = lines
+    .filter((l: any) => l.direction === "DEBIT")
+    .reduce((s: number, l: any) => s + Number(l.amount), 0)
+  const totalCredit = lines
+    .filter((l: any) => l.direction === "CREDIT")
+    .reduce((s: number, l: any) => s + Number(l.amount), 0)
 
-  const voucherNumber = await nextVoucherNumber(ctx.company.id, voucherType as VoucherType)
+  let configPrefix:     string | undefined
+  let resolvedConfigId: string | undefined
+  if (voucherTypeConfigId) {
+    const vtc = await prisma.voucherTypeConfig.findFirst({
+      where:  { id: voucherTypeConfigId, companyId: ctx.company.id, deletedAt: null },
+      select: { prefix: true, id: true },
+    })
+    if (!vtc) return NextResponse.json({ error: "Invalid voucherTypeConfigId." }, { status: 400 })
+    configPrefix     = vtc.prefix
+    resolvedConfigId = vtc.id
+  }
+  const voucherNumber = await nextVoucherNumber(
+    ctx.company.id,
+    voucherType as VoucherType,
+    configPrefix ? { prefix: configPrefix, voucherTypeConfigId: resolvedConfigId } : undefined,
+  )
 
   const entry = await prisma.journalEntry.create({
     data: {
-      companyId:    ctx.company.id,
-      voucherType:  voucherType as VoucherType,
+      companyId:           ctx.company.id,
+      voucherType:         voucherType as VoucherType,
+      voucherTypeConfigId: resolvedConfigId ?? null,
       voucherNumber,
       date:         new Date(date),
       status:       "DRAFT",
