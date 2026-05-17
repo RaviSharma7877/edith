@@ -18,7 +18,7 @@ export default async function AdminPage() {
     },
   })
 
-  const isSuperAdmin = user?.workspaceMembers.some((m) => m.systemRole === "SUPER_ADMIN")
+  const isSuperAdmin = user?.workspaceMembers.some((m: { systemRole: string | null }) => m.systemRole === "SUPER_ADMIN")
   if (!isSuperAdmin) redirect("/workspace")
 
   const [totalWorkspaces, totalUsers, totalCompanies] = await Promise.all([

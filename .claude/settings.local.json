@@ -67,7 +67,9 @@
       "Bash(npm run *)",
       "Bash(grep \"Users\\\\\\\\|\\\\.tsx\\\\|\\\\.ts\")",
       "Bash(grep -E \"^C:\\\\\\\\\\\\\\\\|set-state-in-effect|no-html-link-for-pages|no-unescaped-entities|no-explicit-any|prefer-const|immutability|purity\")",
-      "Bash(grep \"^C:\\\\\\\\\")"
+      "Bash(grep \"^C:\\\\\\\\\")",
+      "Bash(grep -v \"//.*\\\\.\")",
+      "Bash(grep -vE \"\\\\.\\(tsx|ts\\):[0-9]+:\\\\s*\\(//|{|<\\)\")"
     ]
   }
 }
