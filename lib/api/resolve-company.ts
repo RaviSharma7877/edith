@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma"
+import type { Company } from "@prisma/client"
 
 export type CompanyContext = {
-  company: NonNullable<Awaited<ReturnType<typeof prisma.company.findFirst>>>
+  company: Company
   workspaceId: string
   userId: string
 }
