@@ -149,7 +149,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       const result = await signIn("credentials", {
         email,
         password,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/onboarding",
         redirect: false,
       })
       setSubmitting(false)
@@ -157,12 +157,12 @@ export function AuthForm({ mode }: AuthFormProps) {
         setError("Could not create account. Please try again.")
         return
       }
-      window.location.href = result?.url || "/dashboard"
+      window.location.href = result?.url || "/onboarding"
     } else {
       const result = await signIn("credentials", {
         email,
         password,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/onboarding",
         redirect: false,
       })
       setSubmitting(false)
@@ -170,7 +170,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         setError("Incorrect email or password.")
         return
       }
-      window.location.href = result?.url || "/dashboard"
+      window.location.href = result?.url || "/onboarding"
     }
   }
 
