@@ -116,7 +116,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const handleOAuth = async (provider: "google" | "github" | "microsoft") => {
     setOAuthLoading(provider)
     setError("")
-    await signIn(provider, { callbackUrl: "/dashboard" })
+    await signIn(provider, { callbackUrl: "/onboarding" })
     setOAuthLoading(null)
   }
 
