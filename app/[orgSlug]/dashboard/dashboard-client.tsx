@@ -17,7 +17,6 @@ import {
   TrendingDown,
   ReceiptText,
   Building2,
-  ChevronRight,
   MoreHorizontal,
   CircleCheck,
   Clock,
@@ -92,6 +91,30 @@ interface Org {
   name: string
 }
 
+export interface StatCard {
+  label: string
+  value: string
+  change: string
+  up: boolean
+  sub1: string
+  sub2: string
+}
+
+export interface ChartPoint {
+  month: string
+  revenue: number
+  expenses: number
+}
+
+export interface Transaction {
+  id: string
+  description: string
+  type: string
+  status: string
+  amount: string
+  date: string
+}
+
 interface DashboardClientProps {
   orgSlug: string
   orgName: string
@@ -99,34 +122,10 @@ interface DashboardClientProps {
   userEmail?: string
   orgs: Org[]
   showWelcome: boolean
+  stats: StatCard[]
+  revenueData: ChartPoint[]
+  transactions: Transaction[]
 }
-
-// ── Static mock data ──────────────────────────────────────────────────────────
-
-const revenueData = [
-  { month: "Jan", revenue: 186000, expenses: 120000 },
-  { month: "Feb", revenue: 205000, expenses: 135000 },
-  { month: "Mar", revenue: 237000, expenses: 148000 },
-  { month: "Apr", revenue: 273000, expenses: 160000 },
-  { month: "May", revenue: 209000, expenses: 142000 },
-  { month: "Jun", revenue: 314000, expenses: 175000 },
-  { month: "Jul", revenue: 290000, expenses: 168000 },
-  { month: "Aug", revenue: 340000, expenses: 182000 },
-  { month: "Sep", revenue: 280000, expenses: 159000 },
-  { month: "Oct", revenue: 390000, expenses: 210000 },
-  { month: "Nov", revenue: 350000, expenses: 195000 },
-  { month: "Dec", revenue: 420000, expenses: 225000 },
-]
-
-const recentTransactions = [
-  { id: "1", description: "INV-0042 — Acme Technologies Ltd",  type: "Sales Invoice",  status: "paid",    amount: "₹1,25,000", date: "12 May 2026", assignee: "Ravi Sharma" },
-  { id: "2", description: "INV-0041 — Greenfield Solutions",   type: "Sales Invoice",  status: "pending", amount: "₹87,500",   date: "10 May 2026", assignee: "Priya Nair"  },
-  { id: "3", description: "BILL-0031 — AWS India",              type: "Purchase Bill",  status: "paid",    amount: "₹24,300",   date: "09 May 2026", assignee: "Assign"      },
-  { id: "4", description: "JV-0018 — Depreciation May 2026",   type: "Journal Entry",  status: "posted",  amount: "₹6,800",    date: "08 May 2026", assignee: "Ravi Sharma" },
-  { id: "5", description: "INV-0040 — Nova Retail Pvt Ltd",    type: "Sales Invoice",  status: "overdue", amount: "₹2,40,000", date: "01 May 2026", assignee: "Priya Nair"  },
-  { id: "6", description: "BILL-0030 — Office Rent — May",     type: "Purchase Bill",  status: "pending", amount: "₹45,000",   date: "01 May 2026", assignee: "Assign"      },
-  { id: "7", description: "PMT-0022 — Received from Acme",     type: "Payment",        status: "posted",  amount: "₹1,25,000", date: "30 Apr 2026", assignee: "Ravi Sharma" },
-]
 
 const chartConfig = {
   revenue:  { label: "Revenue",  color: "var(--color-chart-1)" },
@@ -436,7 +435,7 @@ function AppSidebar({
 
 // ── Transaction table ─────────────────────────────────────────────────────────
 
-function TransactionTable({ rows }: { rows: typeof recentTransactions }) {
+function TransactionTable({ rows }: { rows: Transaction[] }) {
   return (
     <Table>
       <TableHeader>
@@ -448,14 +447,13 @@ function TransactionTable({ rows }: { rows: typeof recentTransactions }) {
           <TableHead className="font-medium">Status</TableHead>
           <TableHead className="font-medium text-right">Amount</TableHead>
           <TableHead className="font-medium">Date</TableHead>
-          <TableHead className="font-medium">Assignee</TableHead>
           <TableHead className="w-8" />
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={9} className="h-24 text-center text-muted-foreground text-sm">
+            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground text-sm">
               No transactions found.
             </TableCell>
           </TableRow>
@@ -473,15 +471,6 @@ function TransactionTable({ rows }: { rows: typeof recentTransactions }) {
               <TableCell><StatusBadge status={row.status} /></TableCell>
               <TableCell className="text-right font-mono text-sm tabular-nums">{row.amount}</TableCell>
               <TableCell className="text-sm text-muted-foreground">{row.date}</TableCell>
-              <TableCell>
-                {row.assignee === "Assign" ? (
-                  <Button variant="outline" size="xs" className="h-6 text-xs text-muted-foreground">
-                    Assign reviewer <ChevronRight className="size-3 opacity-50" />
-                  </Button>
-                ) : (
-                  <span className="text-sm">{row.assignee}</span>
-                )}
-              </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -514,6 +503,9 @@ export function DashboardClient({
   userEmail,
   orgs,
   showWelcome: initialShowWelcome,
+  stats,
+  revenueData,
+  transactions,
 }: DashboardClientProps) {
   const { update } = useSession()
   const [showWelcome, setShowWelcome] = useState(initialShowWelcome)
@@ -665,11 +657,19 @@ export function DashboardClient({
                       <TabsTrigger value="all"      className="text-xs">All</TabsTrigger>
                       <TabsTrigger value="invoices" className="text-xs">
                         Invoices
-                        <Badge variant="secondary" className="ml-1 h-4 min-w-4 px-1 text-[10px]">3</Badge>
+                        {transactions.filter((r) => r.type === "Sales Invoice").length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 min-w-4 px-1 text-[10px]">
+                            {transactions.filter((r) => r.type === "Sales Invoice").length}
+                          </Badge>
+                        )}
                       </TabsTrigger>
                       <TabsTrigger value="bills"    className="text-xs">
                         Bills
-                        <Badge variant="secondary" className="ml-1 h-4 min-w-4 px-1 text-[10px]">2</Badge>
+                        {transactions.filter((r) => r.type === "Purchase Bill").length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 min-w-4 px-1 text-[10px]">
+                            {transactions.filter((r) => r.type === "Purchase Bill").length}
+                          </Badge>
+                        )}
                       </TabsTrigger>
                       <TabsTrigger value="journals" className="text-xs">Journals</TabsTrigger>
                     </TabsList>
@@ -685,10 +685,10 @@ export function DashboardClient({
                     </div>
                   </div>
 
-                  <TabsContent value="all"      className="mt-4 border-0 p-0"><TransactionTable rows={recentTransactions} /></TabsContent>
-                  <TabsContent value="invoices" className="mt-4 border-0 p-0"><TransactionTable rows={recentTransactions.filter((r) => r.type === "Sales Invoice")} /></TabsContent>
-                  <TabsContent value="bills"    className="mt-4 border-0 p-0"><TransactionTable rows={recentTransactions.filter((r) => r.type === "Purchase Bill")} /></TabsContent>
-                  <TabsContent value="journals" className="mt-4 border-0 p-0"><TransactionTable rows={recentTransactions.filter((r) => r.type === "Journal Entry")} /></TabsContent>
+                  <TabsContent value="all"      className="mt-4 border-0 p-0"><TransactionTable rows={transactions} /></TabsContent>
+                  <TabsContent value="invoices" className="mt-4 border-0 p-0"><TransactionTable rows={transactions.filter((r) => r.type === "Sales Invoice")} /></TabsContent>
+                  <TabsContent value="bills"    className="mt-4 border-0 p-0"><TransactionTable rows={transactions.filter((r) => r.type === "Purchase Bill")} /></TabsContent>
+                  <TabsContent value="journals" className="mt-4 border-0 p-0"><TransactionTable rows={transactions.filter((r) => r.type === "Journal Entry")} /></TabsContent>
                 </Tabs>
               </CardHeader>
             </Card>
