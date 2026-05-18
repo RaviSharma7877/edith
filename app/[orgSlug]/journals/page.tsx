@@ -89,6 +89,7 @@ export default async function JournalsPage({
             date:        e.date.toISOString(),
             createdAt:   e.createdAt.toISOString(),
             postedAt:    e.postedAt?.toISOString() ?? null,
+            voucherNumber: e.voucherNumber ?? "Draft",
             totalDebit:  String(totalDebit),
             totalCredit: String(totalCredit),
             configLabel: voucherTypeConfig?.label ?? null,

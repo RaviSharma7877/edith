@@ -21,9 +21,10 @@ export default async function PayrollReportsPage({ params }: { params: Promise<{
     prisma.attendance.groupBy({ by: ["status"], where: { companyId: ctx.company.id }, _count: { id: true } }),
   ])
 
-  type RunRow = { id: string; runNumber: string; period: string; status: string; grossPay: { valueOf(): number } | null; deductions: { valueOf(): number } | null; netPay: { valueOf(): number } | null }
-  type PFEntry = { _sum: { employeePfAmount: { valueOf(): number } | null; employerPfAmount: { valueOf(): number } | null } }
-  type ESIEntry = { _sum: { employeeEsiAmount: { valueOf(): number } | null; employerEsiAmount: { valueOf(): number } | null } }
+  type DecimalValue = { toString(): string } | number | string | null
+  type RunRow = { id: string; runNumber: string; period: string; status: string; grossPay: DecimalValue; deductions: DecimalValue; netPay: DecimalValue }
+  type PFEntry = { _sum: { employeePfAmount: DecimalValue; employerPfAmount: DecimalValue } }
+  type ESIEntry = { _sum: { employeeEsiAmount: DecimalValue; employerEsiAmount: DecimalValue } }
   type AttendanceRow = { status: string; _count: { id: number } }
 
   const typedRuns = runs as RunRow[]

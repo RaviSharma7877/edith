@@ -91,7 +91,12 @@ export default async function PaymentsPage({
       <div className="flex-1 overflow-auto p-6">
         <PaymentsClient
           orgSlug={orgSlug}
-          initialPayments={typedPayments.map((p) => ({ ...p, date: p.date instanceof Date ? p.date.toISOString() : p.date, amount: p.amount?.toString() ?? "0" }))}
+          initialPayments={typedPayments.map((p) => ({
+            ...p,
+            paymentNumber: p.paymentNumber ?? "Draft",
+            date: p.date instanceof Date ? p.date.toISOString() : p.date,
+            amount: p.amount?.toString() ?? "0",
+          }))}
           initialPagination={pagination}
           customers={customers}
           vendors={vendors}

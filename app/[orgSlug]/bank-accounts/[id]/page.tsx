@@ -7,7 +7,9 @@ import { resolveCompany } from "@/lib/api/resolve-company"
 import { BankAccountEdit } from "./bank-account-edit"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
-function fmt(v: { toNumber?: () => number } | string | number | null | undefined) {
+type DecimalValue = { toNumber?: () => number } | string | number | null | undefined
+
+function fmt(v: DecimalValue) {
   if (v === null || v === undefined) return "—"
   const n = typeof v === "object" && v && "toNumber" in v ? (v as { toNumber: () => number }).toNumber() : Number(v)
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -47,7 +49,7 @@ export default async function BankAccountDetailPage({
 
   const accountForEdit = { ...account, currentBalance: account.currentBalance?.toString() ?? "0" }
 
-  type StatementRow = { id: string; startDate: Date | null; endDate: Date | null; isLocked: boolean; closingBalance: unknown; sourceType: string | null; _count: { lines: number }; runs: { completedAt: Date | null; totalMatched: number }[] }
+  type StatementRow = { id: string; startDate: Date | null; endDate: Date | null; isLocked: boolean; closingBalance: DecimalValue; sourceType: string | null; _count: { lines: number }; runs: { completedAt: Date | null; totalMatched: number }[] }
   const typedStatements = statements as StatementRow[]
 
   return (

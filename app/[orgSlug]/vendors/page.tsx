@@ -52,7 +52,7 @@ export default async function VendorsPage({
     }),
   ])
 
-  type VendorRow = { id: string; code: string | null; name: string; email: string | null; phone: string | null; gstin: string | null; paymentTerms: string | null; isActive: boolean; createdAt: Date; _count: { purchaseBills: number } }
+  type VendorRow = { id: string; code: string | null; name: string; email: string | null; phone: string | null; gstin: string | null; paymentTerms: number | null; isActive: boolean; createdAt: Date; _count: { purchaseBills: number } }
   const typedVendors = vendors as VendorRow[]
 
   return (
