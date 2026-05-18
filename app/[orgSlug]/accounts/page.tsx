@@ -36,7 +36,7 @@ export default async function AccountsPage({
     openingBalance: { toString(): string } | null
     _count: { journalLines: number; children: number }
   }
-  const accountRows = (accounts as AccountRow[]).map(a => ({ ...a, openingBalance: a.openingBalance?.toString() ?? null }))
+  const accountRows = (accounts as AccountRow[]).map(a => ({ ...a, subtype: a.subtype ?? "", openingBalance: a.openingBalance?.toString() ?? null }))
 
   return (
     <div className="flex h-svh flex-1 flex-col overflow-hidden bg-[#F7F5F3]">
