@@ -85,7 +85,7 @@ export default async function CustomerDetailPage({
                   View all
                 </Link>
               </div>
-              {customer.salesInvoices.map((inv) => (
+              {(customer.salesInvoices as { id: string; invoiceNumber: string; invoiceDate: Date; status: string; totalAmount: { toNumber(): number } | null; amountDue: { toNumber(): number } | null; isCreditNote: boolean }[]).map((inv) => (
                 <Link
                   key={inv.id}
                   href={`/${orgSlug}/sales-invoices/${inv.id}`}

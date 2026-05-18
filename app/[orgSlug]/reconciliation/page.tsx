@@ -46,6 +46,9 @@ export default async function ReconciliationPage({
   const statementId   = sp.statementId
   const bankAccountId = sp.bankAccountId
 
+  type ReconciliationRunRow = { id: string; startedAt: Date | null; completedAt: Date | null; totalMatched: number; totalUnmatched: number; statement: { startDate: Date | null; endDate: Date | null; bankAccount: { id: string; bankName: string; maskedNumber: string | null } } }
+  const typedRuns = runs as ReconciliationRunRow[]
+
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center gap-3 border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -81,7 +84,7 @@ export default async function ReconciliationPage({
                   <span className="text-right">Unmatched</span>
                   <span>Status</span>
                 </div>
-                {runs.map((run) => (
+                {typedRuns.map((run) => (
                   <Link
                     key={run.id}
                     href={`/${orgSlug}/reconciliation/${run.id}`}

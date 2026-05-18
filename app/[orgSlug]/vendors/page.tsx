@@ -52,6 +52,9 @@ export default async function VendorsPage({
     }),
   ])
 
+  type VendorRow = { id: string; code: string | null; name: string; email: string | null; phone: string | null; gstin: string | null; paymentTerms: string | null; isActive: boolean; createdAt: Date; _count: { purchaseBills: number } }
+  const typedVendors = vendors as VendorRow[]
+
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -67,7 +70,7 @@ export default async function VendorsPage({
       <div className="flex-1 overflow-auto p-6">
         <VendorsClient
           orgSlug={orgSlug}
-          vendors={vendors.map((v) => ({ ...v, createdAt: v.createdAt.toISOString() }))}
+          vendors={typedVendors.map((v) => ({ ...v, createdAt: v.createdAt.toISOString() }))}
           page={page}
           pages={Math.ceil(total / limit)}
           total={total}

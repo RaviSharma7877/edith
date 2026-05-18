@@ -35,10 +35,15 @@ export default async function AdminPage() {
     },
   })
 
+  type WorkspaceRow = {
+    id: string; name: string; slug: string; planTier: string; status: string
+    createdAt: Date; _count: { members: number }
+  }
+
   return (
     <AdminDashboard
       stats={{ totalWorkspaces, totalUsers, totalCompanies }}
-      recentWorkspaces={recentWorkspaces.map((w) => ({
+      recentWorkspaces={(recentWorkspaces as WorkspaceRow[]).map((w) => ({
         id:        w.id,
         name:      w.name,
         slug:      w.slug,

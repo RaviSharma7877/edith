@@ -53,8 +53,9 @@ export default async function ReconciliationRunPage({
   const windowStart = new Date(stmt.startDate); windowStart.setDate(windowStart.getDate() - 7)
   const windowEnd   = new Date(stmt.endDate);   windowEnd.setDate(windowEnd.getDate() + 7)
 
+  type MatchRow = { journalLineId: string | null; status: string }
   const matchedJLineIds = new Set(
-    run.matches
+    (run.matches as MatchRow[])
       .filter((m) => m.journalLineId && ["MATCHED","CLEARED"].includes(m.status))
       .map((m) => m.journalLineId!),
   )

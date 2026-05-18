@@ -42,6 +42,18 @@ export default async function ManufacturingJournalsPage({
     },
   })
 
+  type JournalRow = {
+    id: string
+    journalNumber: string
+    date: Date
+    outputQty: unknown
+    status: string
+    bom: { name: string; finishedItem: { name: string } }
+    outputGodown: { name: string } | null
+    _count: { consumptions: number }
+  }
+  const typedJournals = journals as JournalRow[]
+
   return (
     <InventoryPageShell
       title="Manufacturing Journals"
@@ -75,7 +87,7 @@ export default async function ManufacturingJournalsPage({
               <span className="text-center">Components</span>
               <span className="text-center">Status</span>
             </div>
-            {journals.map((journal) => (
+            {typedJournals.map((journal) => (
               <Link key={journal.id} href={`/${orgSlug}/inventory/manufacturing/${journal.id}`} className="grid grid-cols-[1.5fr_1fr_2fr_1fr_1fr_0.8fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm transition hover:bg-[#FAFAF9]">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-[#37322F]">{journal.journalNumber}</p>

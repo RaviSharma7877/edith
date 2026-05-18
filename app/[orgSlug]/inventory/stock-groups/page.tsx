@@ -23,6 +23,16 @@ export default async function StockGroupsPage({ params }: { params: Promise<{ or
     },
   })
 
+  type GroupRow = {
+    id: string
+    name: string
+    valuationMethod: string
+    isActive: boolean
+    parent: { name: string } | null
+    _count: { children: number; stockItems: number }
+  }
+  const typedGroups = groups as GroupRow[]
+
   return (
     <InventoryPageShell
       title="Stock Groups"
@@ -40,7 +50,7 @@ export default async function StockGroupsPage({ params }: { params: Promise<{ or
             <span className="text-right">Items</span>
             <span className="text-center">Status</span>
           </div>
-          {groups.map((group) => (
+          {typedGroups.map((group) => (
             <Link key={group.id} href={`/${orgSlug}/inventory/stock-groups/${group.id}`} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm transition hover:bg-[#FAFAF9]">
               <span className="font-medium text-[#37322F]">{group.name}</span>
               <span className="text-[#605A57]">{group.parent?.name ?? "Root"}</span>

@@ -21,18 +21,28 @@ export default async function PayrollReportsPage({ params }: { params: Promise<{
     prisma.attendance.groupBy({ by: ["status"], where: { companyId: ctx.company.id }, _count: { id: true } }),
   ])
 
-  const totalGross = runs.reduce((s, r) => s + Number(r.grossPay), 0)
-  const totalNet = runs.reduce((s, r) => s + Number(r.netPay), 0)
-  const totalDeductions = runs.reduce((s, r) => s + Number(r.deductions), 0)
-  const totalPFEmployee = pfEntries.reduce((s, e) => s + Number(e._sum.employeePfAmount ?? 0), 0)
-  const totalPFEmployer = pfEntries.reduce((s, e) => s + Number(e._sum.employerPfAmount ?? 0), 0)
-  const totalESIEmployee = esiEntries.reduce((s, e) => s + Number(e._sum.employeeEsiAmount ?? 0), 0)
-  const totalESIEmployer = esiEntries.reduce((s, e) => s + Number(e._sum.employerEsiAmount ?? 0), 0)
+  type RunRow = { id: string; runNumber: string; period: string; status: string; grossPay: { valueOf(): number } | null; deductions: { valueOf(): number } | null; netPay: { valueOf(): number } | null }
+  type PFEntry = { _sum: { employeePfAmount: { valueOf(): number } | null; employerPfAmount: { valueOf(): number } | null } }
+  type ESIEntry = { _sum: { employeeEsiAmount: { valueOf(): number } | null; employerEsiAmount: { valueOf(): number } | null } }
+  type AttendanceRow = { status: string; _count: { id: number } }
 
-  const attendanceByStatus = Object.fromEntries(attendanceRecords.map((r) => [r.status, r._count.id]))
-  const totalAttendance = attendanceRecords.reduce((s, r) => s + r._count.id, 0)
+  const typedRuns = runs as RunRow[]
+  const typedPF = pfEntries as PFEntry[]
+  const typedESI = esiEntries as ESIEntry[]
+  const typedAttendance = attendanceRecords as AttendanceRow[]
 
-  const paidRuns = runs.filter((r) => r.status === "PAID")
+  const totalGross = typedRuns.reduce((s, r) => s + Number(r.grossPay), 0)
+  const totalNet = typedRuns.reduce((s, r) => s + Number(r.netPay), 0)
+  const totalDeductions = typedRuns.reduce((s, r) => s + Number(r.deductions), 0)
+  const totalPFEmployee = typedPF.reduce((s, e) => s + Number(e._sum.employeePfAmount ?? 0), 0)
+  const totalPFEmployer = typedPF.reduce((s, e) => s + Number(e._sum.employerPfAmount ?? 0), 0)
+  const totalESIEmployee = typedESI.reduce((s, e) => s + Number(e._sum.employeeEsiAmount ?? 0), 0)
+  const totalESIEmployer = typedESI.reduce((s, e) => s + Number(e._sum.employerEsiAmount ?? 0), 0)
+
+  const attendanceByStatus = Object.fromEntries(typedAttendance.map((r) => [r.status, r._count.id]))
+  const totalAttendance = typedAttendance.reduce((s, r) => s + r._count.id, 0)
+
+  const paidRuns = typedRuns.filter((r) => r.status === "PAID")
 
   return (
     <Phase5Shell title="Payroll Reports" description="Headcount, cost summary and statutory compliance snapshot">
@@ -84,14 +94,14 @@ export default async function PayrollReportsPage({ params }: { params: Promise<{
         )}
 
         {/* Run history */}
-        {runs.length > 0 && (
+        {typedRuns.length > 0 && (
           <section>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#605A57]">Payroll Run History</h2>
             <div className="overflow-hidden rounded-lg border border-[rgba(55,50,47,0.10)] bg-white">
               <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#605A57]">
                 <span>Run</span><span>Period</span><span>Gross</span><span>Deductions</span><span>Net</span><span>Status</span>
               </div>
-              {runs.map((run) => (
+              {typedRuns.map((run) => (
                 <div key={run.id} className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm">
                   <span className="font-medium text-[#37322F]">{run.runNumber}</span>
                   <span>{run.period}</span>

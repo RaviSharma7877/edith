@@ -25,6 +25,18 @@ export default async function StockVouchersPage({ params }: { params: Promise<{ 
     include: { _count: { select: { lines: true, ledgerRows: true } } },
   })
 
+  type VoucherRow = {
+    id: string
+    voucherNumber: string
+    voucherType: string
+    date: Date
+    status: string
+    sourceType: string | null
+    sourceId: string | null
+    _count: { lines: number; ledgerRows: number }
+  }
+  const typedVouchers = vouchers as VoucherRow[]
+
   return (
     <InventoryPageShell
       title="Stock Vouchers"
@@ -47,7 +59,7 @@ export default async function StockVouchersPage({ params }: { params: Promise<{ 
             <span className="text-right">Lines</span>
             <span>Source</span>
           </div>
-          {vouchers.map((voucher) => (
+          {typedVouchers.map((voucher) => (
             <div key={voucher.id} className="grid grid-cols-[1.4fr_1.3fr_1fr_1fr_1fr_2fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm">
               <span className="font-medium text-[#37322F]">{voucher.voucherNumber}</span>
               <span className="text-[#605A57]">{voucher.voucherType}</span>

@@ -23,6 +23,17 @@ export default async function GodownsPage({ params }: { params: Promise<{ orgSlu
     },
   })
 
+  type GodownRow = {
+    id: string
+    name: string
+    code: string | null
+    address: string | null
+    isActive: boolean
+    parent: { name: string } | null
+    _count: { children: number; voucherLines: number }
+  }
+  const typedGodowns = godowns as GodownRow[]
+
   return (
     <InventoryPageShell
       title="Godowns"
@@ -40,7 +51,7 @@ export default async function GodownsPage({ params }: { params: Promise<{ orgSlu
             <span>Address</span>
             <span className="text-center">Status</span>
           </div>
-          {godowns.map((godown) => (
+          {typedGodowns.map((godown) => (
             <Link key={godown.id} href={`/${orgSlug}/inventory/godowns/${godown.id}`} className="grid grid-cols-[1fr_2fr_1.5fr_2fr_1fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm transition hover:bg-[#FAFAF9]">
               <span className="font-mono text-xs text-[#605A57]">{godown.code ?? "-"}</span>
               <span className="font-medium text-[#37322F]">{godown.name}</span>

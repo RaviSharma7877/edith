@@ -19,6 +19,9 @@ export default async function ESIRegisterPage({ params }: { params: Promise<{ or
     include: { _count: { select: { esiRegisters: true } } },
   })
 
+  type ESIRunRow = { id: string; runNumber: string; period: string; status: string; _count: { esiRegisters: number } }
+  const typedRuns = runs as ESIRunRow[]
+
   return (
     <Phase5Shell title="ESI Register" description="Employee State Insurance contribution register — view by payroll run">
       {runs.length === 0 ? (
@@ -31,7 +34,7 @@ export default async function ESIRegisterPage({ params }: { params: Promise<{ or
             <span>Status</span>
             <span></span>
           </div>
-          {runs.map((run) => (
+          {typedRuns.map((run) => (
             <div key={run.id} className="grid grid-cols-[1.2fr_1fr_1fr_1fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm">
               <span><span className="font-medium text-[#37322F]">{run.runNumber}</span> · {run.period}</span>
               <span>{run._count.esiRegisters} entries</span>

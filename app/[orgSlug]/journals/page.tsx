@@ -55,6 +55,15 @@ export default async function JournalsPage({
 
   const pages = Math.ceil(total / limit)
 
+  type EntryRow = {
+    id: string; voucherNumber: string | null; voucherType: string; date: Date
+    status: string; description: string | null; isReversal: boolean
+    postedAt: Date | null; createdAt: Date
+    totalDebit: { toString(): string }; totalCredit: { toString(): string }
+    voucherTypeConfig: { label: string } | null; _count: { lines: number }
+  }
+  const typedEntries = entries as EntryRow[]
+
   return (
     <div className="flex h-svh flex-1 flex-col overflow-hidden bg-[#F7F5F3]">
       <header className="flex items-center justify-between border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -75,7 +84,7 @@ export default async function JournalsPage({
       <div className="flex-1 overflow-auto p-6">
         <JournalsClient
           orgSlug={orgSlug}
-          entries={entries.map(({ voucherTypeConfig, totalDebit, totalCredit, ...e }) => ({
+          entries={typedEntries.map(({ voucherTypeConfig, totalDebit, totalCredit, ...e }) => ({
             ...e,
             date:        e.date.toISOString(),
             createdAt:   e.createdAt.toISOString(),

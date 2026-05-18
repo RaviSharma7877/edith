@@ -47,6 +47,9 @@ export default async function BankAccountDetailPage({
 
   const accountForEdit = { ...account, currentBalance: account.currentBalance?.toString() ?? "0" }
 
+  type StatementRow = { id: string; startDate: Date | null; endDate: Date | null; isLocked: boolean; closingBalance: unknown; sourceType: string | null; _count: { lines: number }; runs: { completedAt: Date | null; totalMatched: number }[] }
+  const typedStatements = statements as StatementRow[]
+
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -94,7 +97,7 @@ export default async function BankAccountDetailPage({
                   <span>Reconciliation</span>
                   <span />
                 </div>
-                {statements.map((s) => {
+                {typedStatements.map((s) => {
                   const latestRun  = s.runs[0]
                   const isComplete = !!latestRun?.completedAt
                   const pct        = latestRun

@@ -30,6 +30,14 @@ export default async function AccountsPage({
     },
   })
 
+  type AccountRow = {
+    id: string; code: string; name: string; type: string; subtype: string | null
+    parentId: string | null; isPosting: boolean; isActive: boolean; isSystemAccount: boolean
+    openingBalance: { toString(): string } | null
+    _count: { journalLines: number; children: number }
+  }
+  const accountRows = (accounts as AccountRow[]).map(a => ({ ...a, openingBalance: a.openingBalance?.toString() ?? null }))
+
   return (
     <div className="flex h-svh flex-1 flex-col overflow-hidden bg-[#F7F5F3]">
       <header className="flex items-center justify-between border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -48,7 +56,7 @@ export default async function AccountsPage({
         </Link>
       </header>
       <div className="flex-1 overflow-auto p-6">
-        <AccountsClient orgSlug={orgSlug} accounts={accounts.map((a) => ({ ...a, openingBalance: a.openingBalance?.toString() ?? null }))} />
+        <AccountsClient orgSlug={orgSlug} accounts={accountRows} />
       </div>
     </div>
   )

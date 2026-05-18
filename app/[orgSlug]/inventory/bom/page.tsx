@@ -41,6 +41,16 @@ export default async function BOMPage({
     },
   })
 
+  type BomRow = {
+    id: string
+    name: string
+    outputQty: unknown
+    isActive: boolean
+    finishedItem: { name: string }
+    _count: { components: number; byProducts: number }
+  }
+  const typedBoms = boms as BomRow[]
+
   return (
     <InventoryPageShell
       title="Bill of Materials"
@@ -73,7 +83,7 @@ export default async function BOMPage({
               <span className="text-center">Components</span>
               <span className="text-center">Status</span>
             </div>
-            {boms.map((bom) => (
+            {typedBoms.map((bom) => (
               <Link key={bom.id} href={`/${orgSlug}/inventory/bom/${bom.id}`} className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm transition hover:bg-[#FAFAF9]">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-[#37322F]">{bom.name}</p>

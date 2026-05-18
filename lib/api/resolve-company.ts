@@ -20,9 +20,8 @@ export async function resolveCompany(
     },
   })
 
-  const member = user?.workspaceMembers.find((m) => {
-    const inviteStatus = "inviteStatus" in m ? m.inviteStatus : "ACCEPTED"
-    return m.workspace.slug === orgSlug && inviteStatus === "ACCEPTED"
+  const member = user?.workspaceMembers.find((m: { workspace: { id: string; slug: string }; inviteStatus: string }) => {
+    return m.workspace.slug === orgSlug && m.inviteStatus === "ACCEPTED"
   })
   if (!member) return null
 

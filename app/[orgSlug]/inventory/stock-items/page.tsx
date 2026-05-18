@@ -45,6 +45,20 @@ export default async function StockItemsPage({
     },
   })
 
+  type ItemRow = {
+    id: string
+    name: string
+    code: string | null
+    barcode: string | null
+    reorderLevel: unknown
+    isActive: boolean
+    group: { name: string; valuationMethod: string }
+    category: { name: string } | null
+    primaryUnit: { symbol: string }
+    _count: { batches: number; serialNumbers: number }
+  }
+  const typedItems = items as ItemRow[]
+
   return (
     <InventoryPageShell
       title="Stock Items"
@@ -78,7 +92,7 @@ export default async function StockItemsPage({
               <span>Reorder</span>
               <span className="text-center">Status</span>
             </div>
-            {items.map((item) => (
+            {typedItems.map((item) => (
               <Link key={item.id} href={`/${orgSlug}/inventory/stock-items/${item.id}`} className="grid grid-cols-[1.8fr_1.2fr_1fr_1fr_1fr_0.8fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm transition hover:bg-[#FAFAF9]">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-[#37322F]">{item.name}</p>

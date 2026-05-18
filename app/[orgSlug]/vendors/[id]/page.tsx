@@ -81,7 +81,7 @@ export default async function VendorDetailPage({
                   View all
                 </Link>
               </div>
-              {vendor.purchaseBills.map((bill) => (
+              {(vendor.purchaseBills as { id: string; billNumber: string; billDate: Date; status: string; totalAmount: { toNumber(): number } | null; amountDue: { toNumber(): number } | null; isDebitNote: boolean }[]).map((bill) => (
                 <Link
                   key={bill.id}
                   href={`/${orgSlug}/purchase-bills/${bill.id}`}

@@ -57,6 +57,14 @@ export default async function PurchaseBillsPage({
     }),
   ])
 
+  type BillRow = {
+    id: string; billNumber: string; vendorBillRef: string | null; status: string
+    billDate: Date; dueDate: Date | null; isDebitNote: boolean; currency: string
+    totalAmount: { toString(): string } | null; amountDue: { toString(): string } | null
+    vendor: { id: string; name: string; code: string | null }; _count: { lines: number }
+  }
+  const typedBills = bills as BillRow[]
+
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -72,7 +80,7 @@ export default async function PurchaseBillsPage({
       <div className="flex-1 overflow-auto p-6">
         <BillsClient
           orgSlug={orgSlug}
-          bills={bills.map((b) => ({ ...b, totalAmount: b.totalAmount?.toString() ?? "0", amountDue: b.amountDue?.toString() ?? "0", billDate: b.billDate instanceof Date ? b.billDate.toISOString() : b.billDate, dueDate: b.dueDate instanceof Date ? b.dueDate.toISOString() : b.dueDate }))}
+          bills={typedBills.map((b) => ({ ...b, totalAmount: b.totalAmount?.toString() ?? "0", amountDue: b.amountDue?.toString() ?? "0", billDate: b.billDate instanceof Date ? b.billDate.toISOString() : b.billDate, dueDate: b.dueDate instanceof Date ? b.dueDate.toISOString() : b.dueDate }))}
           page={page}
           pages={Math.ceil(total / limit)}
           total={total}

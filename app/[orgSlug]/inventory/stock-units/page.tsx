@@ -19,6 +19,16 @@ export default async function StockUnitsPage({ params }: { params: Promise<{ org
     include: { _count: { select: { primaryItems: true, altItems: true } } },
   })
 
+  type UnitRow = {
+    id: string
+    name: string
+    symbol: string
+    decimalPlaces: number
+    isActive: boolean
+    _count: { primaryItems: number; altItems: number }
+  }
+  const typedUnits = units as UnitRow[]
+
   return (
     <InventoryPageShell
       title="Stock Units"
@@ -32,7 +42,7 @@ export default async function StockUnitsPage({ params }: { params: Promise<{ org
           <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-3 bg-[#F7F5F3] px-4 py-2 text-xs font-medium text-[#605A57]">
             <span>Name</span><span>Symbol</span><span className="text-right">Decimals</span><span className="text-right">Items</span><span className="text-center">Status</span>
           </div>
-          {units.map((unit) => (
+          {typedUnits.map((unit) => (
             <Link key={unit.id} href={`/${orgSlug}/inventory/stock-units/${unit.id}`} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm hover:bg-[#FAFAF9]">
               <span className="font-medium text-[#37322F]">{unit.name}</span>
               <span className="text-[#605A57]">{unit.symbol}</span>

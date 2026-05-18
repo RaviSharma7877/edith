@@ -63,6 +63,16 @@ export default async function PaymentsPage({
 
   const pagination = { page, pages: Math.ceil(total / limit), total }
 
+  type PaymentRow = {
+    id: string; paymentNumber: string | null; type: string; date: Date
+    amount: { toString(): string } | null; currency: string; status: string
+    paymentMethod: string | null; reference: string | null; isReversal: boolean
+    customer: { id: string; name: string } | null
+    vendor: { id: string; name: string } | null
+    _count: { allocations: number }
+  }
+  const typedPayments = payments as PaymentRow[]
+
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between border-b border-[rgba(55,50,47,0.12)] bg-white px-6 py-4">
@@ -81,7 +91,7 @@ export default async function PaymentsPage({
       <div className="flex-1 overflow-auto p-6">
         <PaymentsClient
           orgSlug={orgSlug}
-          initialPayments={payments.map((p) => ({ ...p, date: p.date instanceof Date ? p.date.toISOString() : p.date, amount: p.amount?.toString() ?? "0" }))}
+          initialPayments={typedPayments.map((p) => ({ ...p, date: p.date instanceof Date ? p.date.toISOString() : p.date, amount: p.amount?.toString() ?? "0" }))}
           initialPagination={pagination}
           customers={customers}
           vendors={vendors}

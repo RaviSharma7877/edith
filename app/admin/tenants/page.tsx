@@ -30,9 +30,14 @@ export default async function TenantsPage() {
     },
   })
 
+  type WorkspaceRow = {
+    id: string; name: string; slug: string; planTier: string; status: string
+    createdAt: Date; _count: { members: number; companies: number }
+  }
+
   return (
     <TenantsClient
-      workspaces={workspaces.map((w) => ({
+      workspaces={(workspaces as WorkspaceRow[]).map((w) => ({
         id:        w.id,
         name:      w.name,
         slug:      w.slug,

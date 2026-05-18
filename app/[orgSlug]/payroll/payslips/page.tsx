@@ -26,6 +26,9 @@ export default async function PayslipsPage({ params }: { params: Promise<{ orgSl
     CANCELLED: "bg-red-100 text-red-700",
   }
 
+  type PayslipRunRow = { id: string; runNumber: string; period: string; netPay: unknown; status: string; _count: { payslipLines: number } }
+  const typedRuns = runs as PayslipRunRow[]
+
   return (
     <Phase5Shell title="Payslip Register" description="View payslip components broken down by employee per payroll run">
       {runs.length === 0 ? (
@@ -40,7 +43,7 @@ export default async function PayslipsPage({ params }: { params: Promise<{ orgSl
             <span>Status</span>
             <span></span>
           </div>
-          {runs.map((run) => (
+          {typedRuns.map((run) => (
             <div key={run.id} className="grid grid-cols-[1.2fr_1fr_1fr_1fr_1fr_0.8fr] items-center gap-3 border-t border-[rgba(55,50,47,0.06)] px-4 py-3 text-sm">
               <span className="font-medium text-[#37322F]">{run.runNumber}</span>
               <span>{run.period}</span>
